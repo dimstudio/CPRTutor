@@ -7,11 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow"  WindowState="Maximized"
         Closing="MainWindow_Closing">
-    <Grid Name="MainCanvas" Margin="0,0,0,0">
-        <Image Name="myImage" Width="1000" Height="1000"  />
-        <Label Name="testLabel" Content="Label" FontSize="60" HorizontalAlignment="Left" Margin="59,90,0,0" VerticalAlignment="Top"/>
-        <Grid Name="SkeletonGrid" Background="Black" Width="200" Height="200" Margin="10" HorizontalAlignment="Left" VerticalAlignment="Bottom">
-            <Image Name="SkeletonImage" Width="200" Height="200" Stretch="UniformToFill" ></Image>
+    <Grid Name="MainCanvas" Margin="0,0,0,0" Width="2560" Height="1440">
+        <Image Name="myImage"  />
+
+        <Grid Name="SkeletonGrid" Background="Transparent"  Width="2560" Height="1440" >
+            <Image Name="SkeletonImage" Stretch="None" ></Image>
         </Grid>
     </Grid>
 </Window>

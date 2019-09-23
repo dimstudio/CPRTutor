@@ -19,8 +19,8 @@ namespace KinectMyo
         VideoFileWriter vf;
         DateTime startCaptureTime;
         string filename;
-        int screenWidth = 2560;
-        int screenHeight = 1440;
+        int screenWidth = 2880;
+        int screenHeight = 1800;
         Bitmap bmpScreenShot;
         int i;
 
@@ -30,8 +30,8 @@ namespace KinectMyo
             timer1.Interval = TimeSpan.FromMilliseconds(20);
             timer1.Tick += timer1_Tick;
             vf = new VideoFileWriter();
-            screenWidth =  (int)System.Windows.SystemParameters.PrimaryScreenWidth;
-            screenHeight = (int)System.Windows.SystemParameters.PrimaryScreenHeight;
+            screenWidth = 2680; //(int)System.Windows.SystemParameters.PrimaryScreenWidth * 2;
+            screenHeight = 1600;// (int)System.Windows.SystemParameters.PrimaryScreenHeight * 2;
             bmpScreenShot = new Bitmap(screenWidth, screenHeight);
         }
 
@@ -72,7 +72,7 @@ namespace KinectMyo
             vf.Height = screenHeight;
             vf.FrameSize = 25;
             vf.VideoCodec = VideoCodec.Default;
-            vf.BitRate = 1000000;
+            vf.BitRate = 1500000;
             vf.Open(filename);
             timer1.Start();
         }

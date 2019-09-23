@@ -18,7 +18,8 @@ using Microsoft.Kinect;
 using KinectMyo;
 using System.IO;
 using Newtonsoft.Json;
-
+using System.Net.Sockets;
+using System.Net;
 
 namespace KinectMyo
 {
@@ -53,6 +54,7 @@ namespace KinectMyo
         public bool start = true;
         //public ConnectorHub.FeedbackHub myFeedback;
         public static bool isRecording = true;
+        public static bool sendingData = false;
 
         MyoViewModel myMyoViewModel;
 
@@ -68,6 +70,7 @@ namespace KinectMyo
             myMyoViewModel = new MyoViewModel();
             myMyoViewModel.ValuesChanged += MyMyoViewModel_ValuesChanged;
 
+            CreateSockets();
             //initConnectorHub();
             StartRecordingFunction();
         }
@@ -93,6 +96,11 @@ namespace KinectMyo
             {
                 RecordingID = startRecordingTime.ToString("yyyy-MM-dd-HH-mm-sss"),
                 ApplicationName = "Kinect"
+            };
+            myoChunk = new RecordingObject
+            {
+                RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
+                ApplicationName = "Myo"
             };
 
             setValueNames();
@@ -254,476 +262,34 @@ namespace KinectMyo
             temp = "0_SpineShoulder_Z";
             kinectNames.Add(temp);
 
-            temp = "1_AnkleRight_X";
-            kinectNames.Add(temp);
-            temp = "1_AnkleRight_Y";
-            kinectNames.Add(temp);
-            temp = "1_AnkleRight_Z";
-            kinectNames.Add(temp);
-            temp = "1_AnkleLeft_X";
-            kinectNames.Add(temp);
-            temp = "1_AnkleLeft_Y";
-            kinectNames.Add(temp);
-            temp = "1_AnkleLeft_Z";
-            kinectNames.Add(temp);
-            temp = "1_ElbowRight_X";
-            kinectNames.Add(temp);
-            temp = "1_ElbowRight_Y";
-            kinectNames.Add(temp);
-            temp = "1_ElbowRight_Z";
-            kinectNames.Add(temp);
-            temp = "1_ElbowLeft_X";
-            kinectNames.Add(temp);
-            temp = "1_ElbowLeft_Y";
-            kinectNames.Add(temp);
-            temp = "1_ElbowLeft_Z";
-            kinectNames.Add(temp);
-            temp = "1_HandRight_X";
-            kinectNames.Add(temp);
-            temp = "1_HandRight_Y";
-            kinectNames.Add(temp);
-            temp = "1_HandRight_Z";
-            kinectNames.Add(temp);
-            temp = "1_HandLeft_X";
-            kinectNames.Add(temp);
-            temp = "1_HandLeft_Y";
-            kinectNames.Add(temp);
-            temp = "1_HandLeft_Z";
-            kinectNames.Add(temp);
-            temp = "1_HandRightTip_X";
-            kinectNames.Add(temp);
-            temp = "1_HandRightTip_Y";
-            kinectNames.Add(temp);
-            temp = "1_HandRightTip_Z";
-            kinectNames.Add(temp);
-            temp = "1_HandLeftTip_X";
-            kinectNames.Add(temp);
-            temp = "1_HandLeftTip_Y";
-            kinectNames.Add(temp);
-            temp = "1_HandLeftTip_Z";
-            kinectNames.Add(temp);
-            temp = "1_Head_X";
-            kinectNames.Add(temp);
-            temp = "1_Head_Y";
-            kinectNames.Add(temp);
-            temp = "1_Head_Z";
-            kinectNames.Add(temp);
-            temp = "1_HipRight_X";
-            kinectNames.Add(temp);
-            temp = "1_HipRight_Y";
-            kinectNames.Add(temp);
-            temp = "1_HipRight_Z";
-            kinectNames.Add(temp);
-            temp = "1_HipLeft_X";
-            kinectNames.Add(temp);
-            temp = "1_HipLeft_Y";
-            kinectNames.Add(temp);
-            temp = "1_HipLeft_Z";
-            kinectNames.Add(temp);
-            temp = "1_ShoulderRight_X";
-            kinectNames.Add(temp);
-            temp = "1_ShoulderRight_Y";
-            kinectNames.Add(temp);
-            temp = "1_ShoulderRight_Z";
-            kinectNames.Add(temp);
-            temp = "1_ShoulderLeft_X";
-            kinectNames.Add(temp);
-            temp = "1_ShoulderLeft_Y";
-            kinectNames.Add(temp);
-            temp = "1_ShoulderLeft_Z";
-            kinectNames.Add(temp);
-            temp = "1_SpineMid_X";
-            kinectNames.Add(temp);
-            temp = "1_SpineMid_Y";
-            kinectNames.Add(temp);
-            temp = "1_SpineMid_Z";
-            kinectNames.Add(temp);
-            temp = "1_SpineShoulder_X";
-            kinectNames.Add(temp);
-            temp = "1_SpineShoulder_Y";
-            kinectNames.Add(temp);
-            temp = "1_SpineShoulder_Z";
-            kinectNames.Add(temp);
 
-            temp = "2_AnkleRight_X";
-            kinectNames.Add(temp);
-            temp = "2_AnkleRight_Y";
-            kinectNames.Add(temp);
-            temp = "2_AnkleRight_Z";
-            kinectNames.Add(temp);
-            temp = "2_AnkleLeft_X";
-            kinectNames.Add(temp);
-            temp = "2_AnkleLeft_Y";
-            kinectNames.Add(temp);
-            temp = "2_AnkleLeft_Z";
-            kinectNames.Add(temp);
-            temp = "2_ElbowRight_X";
-            kinectNames.Add(temp);
-            temp = "2_ElbowRight_Y";
-            kinectNames.Add(temp);
-            temp = "2_ElbowRight_Z";
-            kinectNames.Add(temp);
-            temp = "2_ElbowLeft_X";
-            kinectNames.Add(temp);
-            temp = "2_ElbowLeft_Y";
-            kinectNames.Add(temp);
-            temp = "2_ElbowLeft_Z";
-            kinectNames.Add(temp);
-            temp = "2_HandRight_X";
-            kinectNames.Add(temp);
-            temp = "2_HandRight_Y";
-            kinectNames.Add(temp);
-            temp = "2_HandRight_Z";
-            kinectNames.Add(temp);
-            temp = "2_HandLeft_X";
-            kinectNames.Add(temp);
-            temp = "2_HandLeft_Y";
-            kinectNames.Add(temp);
-            temp = "2_HandLeft_Z";
-            kinectNames.Add(temp);
-            temp = "2_HandRightTip_X";
-            kinectNames.Add(temp);
-            temp = "2_HandRightTip_Y";
-            kinectNames.Add(temp);
-            temp = "2_HandRightTip_Z";
-            kinectNames.Add(temp);
-            temp = "2_HandLeftTip_X";
-            kinectNames.Add(temp);
-            temp = "2_HandLeftTip_Y";
-            kinectNames.Add(temp);
-            temp = "2_HandLeftTip_Z";
-            kinectNames.Add(temp);
-            temp = "2_Head_X";
-            kinectNames.Add(temp);
-            temp = "2_Head_Y";
-            kinectNames.Add(temp);
-            temp = "2_Head_Z";
-            kinectNames.Add(temp);
-            temp = "2_HipRight_X";
-            kinectNames.Add(temp);
-            temp = "2_HipRight_Y";
-            kinectNames.Add(temp);
-            temp = "2_HipRight_Z";
-            kinectNames.Add(temp);
-            temp = "2_HipLeft_X";
-            kinectNames.Add(temp);
-            temp = "2_HipLeft_Y";
-            kinectNames.Add(temp);
-            temp = "2_HipLeft_Z";
-            kinectNames.Add(temp);
-            temp = "2_ShoulderRight_X";
-            kinectNames.Add(temp);
-            temp = "2_ShoulderRight_Y";
-            kinectNames.Add(temp);
-            temp = "2_ShoulderRight_Z";
-            kinectNames.Add(temp);
-            temp = "2_ShoulderLeft_X";
-            kinectNames.Add(temp);
-            temp = "2_ShoulderLeft_Y";
-            kinectNames.Add(temp);
-            temp = "2_ShoulderLeft_Z";
-            kinectNames.Add(temp);
-            temp = "2_SpineMid_X";
-            kinectNames.Add(temp);
-            temp = "2_SpineMid_Y";
-            kinectNames.Add(temp);
-            temp = "2_SpineMid_Z";
-            kinectNames.Add(temp);
-            temp = "2_SpineShoulder_X";
-            kinectNames.Add(temp);
-            temp = "2_SpineShoulder_Y";
-            kinectNames.Add(temp);
-            temp = "2_SpineShoulder_Z";
-            kinectNames.Add(temp);
 
-            temp = "3_AnkleRight_X";
-            kinectNames.Add(temp);
-            temp = "3_AnkleRight_Y";
-            kinectNames.Add(temp);
-            temp = "3_AnkleRight_Z";
-            kinectNames.Add(temp);
-            temp = "3_AnkleLeft_X";
-            kinectNames.Add(temp);
-            temp = "3_AnkleLeft_Y";
-            kinectNames.Add(temp);
-            temp = "3_AnkleLeft_Z";
-            kinectNames.Add(temp);
-            temp = "3_ElbowRight_X";
-            kinectNames.Add(temp);
-            temp = "3_ElbowRight_Y";
-            kinectNames.Add(temp);
-            temp = "3_ElbowRight_Z";
-            kinectNames.Add(temp);
-            temp = "3_ElbowLeft_X";
-            kinectNames.Add(temp);
-            temp = "3_ElbowLeft_Y";
-            kinectNames.Add(temp);
-            temp = "3_ElbowLeft_Z";
-            kinectNames.Add(temp);
-            temp = "3_HandRight_X";
-            kinectNames.Add(temp);
-            temp = "3_HandRight_Y";
-            kinectNames.Add(temp);
-            temp = "3_HandRight_Z";
-            kinectNames.Add(temp);
-            temp = "3_HandLeft_X";
-            kinectNames.Add(temp);
-            temp = "3_HandLeft_Y";
-            kinectNames.Add(temp);
-            temp = "3_HandLeft_Z";
-            kinectNames.Add(temp);
-            temp = "3_HandRightTip_X";
-            kinectNames.Add(temp);
-            temp = "3_HandRightTip_Y";
-            kinectNames.Add(temp);
-            temp = "3_HandRightTip_Z";
-            kinectNames.Add(temp);
-            temp = "3_HandLeftTip_X";
-            kinectNames.Add(temp);
-            temp = "3_HandLeftTip_Y";
-            kinectNames.Add(temp);
-            temp = "3_HandLeftTip_Z";
-            kinectNames.Add(temp);
-            temp = "3_Head_X";
-            kinectNames.Add(temp);
-            temp = "3_Head_Y";
-            kinectNames.Add(temp);
-            temp = "3_Head_Z";
-            kinectNames.Add(temp);
-            temp = "3_HipRight_X";
-            kinectNames.Add(temp);
-            temp = "3_HipRight_Y";
-            kinectNames.Add(temp);
-            temp = "3_HipRight_Z";
-            kinectNames.Add(temp);
-            temp = "3_HipLeft_X";
-            kinectNames.Add(temp);
-            temp = "3_HipLeft_Y";
-            kinectNames.Add(temp);
-            temp = "3_HipLeft_Z";
-            kinectNames.Add(temp);
-            temp = "3_ShoulderRight_X";
-            kinectNames.Add(temp);
-            temp = "3_ShoulderRight_Y";
-            kinectNames.Add(temp);
-            temp = "3_ShoulderRight_Z";
-            kinectNames.Add(temp);
-            temp = "3_ShoulderLeft_X";
-            kinectNames.Add(temp);
-            temp = "3_ShoulderLeft_Y";
-            kinectNames.Add(temp);
-            temp = "3_ShoulderLeft_Z";
-            kinectNames.Add(temp);
-            temp = "3_SpineMid_X";
-            kinectNames.Add(temp);
-            temp = "3_SpineMid_Y";
-            kinectNames.Add(temp);
-            temp = "3_SpineMid_Z";
-            kinectNames.Add(temp);
-            temp = "3_SpineShoulder_X";
-            kinectNames.Add(temp);
-            temp = "3_SpineShoulder_Y";
-            kinectNames.Add(temp);
-            temp = "3_SpineShoulder_Z";
-            kinectNames.Add(temp);
-
-            temp = "4_AnkleRight_X";
-            kinectNames.Add(temp);
-            temp = "4_AnkleRight_Y";
-            kinectNames.Add(temp);
-            temp = "4_AnkleRight_Z";
-            kinectNames.Add(temp);
-            temp = "4_AnkleLeft_X";
-            kinectNames.Add(temp);
-            temp = "4_AnkleLeft_Y";
-            kinectNames.Add(temp);
-            temp = "4_AnkleLeft_Z";
-            kinectNames.Add(temp);
-            temp = "4_ElbowRight_X";
-            kinectNames.Add(temp);
-            temp = "4_ElbowRight_Y";
-            kinectNames.Add(temp);
-            temp = "4_ElbowRight_Z";
-            kinectNames.Add(temp);
-            temp = "4_ElbowLeft_X";
-            kinectNames.Add(temp);
-            temp = "4_ElbowLeft_Y";
-            kinectNames.Add(temp);
-            temp = "4_ElbowLeft_Z";
-            kinectNames.Add(temp);
-            temp = "4_HandRight_X";
-            kinectNames.Add(temp);
-            temp = "4_HandRight_Y";
-            kinectNames.Add(temp);
-            temp = "4_HandRight_Z";
-            kinectNames.Add(temp);
-            temp = "4_HandLeft_X";
-            kinectNames.Add(temp);
-            temp = "4_HandLeft_Y";
-            kinectNames.Add(temp);
-            temp = "4_HandLeft_Z";
-            kinectNames.Add(temp);
-            temp = "4_HandRightTip_X";
-            kinectNames.Add(temp);
-            temp = "4_HandRightTip_Y";
-            kinectNames.Add(temp);
-            temp = "4_HandRightTip_Z";
-            kinectNames.Add(temp);
-            temp = "4_HandLeftTip_X";
-            kinectNames.Add(temp);
-            temp = "4_HandLeftTip_Y";
-            kinectNames.Add(temp);
-            temp = "4_HandLeftTip_Z";
-            kinectNames.Add(temp);
-            temp = "4_Head_X";
-            kinectNames.Add(temp);
-            temp = "4_Head_Y";
-            kinectNames.Add(temp);
-            temp = "4_Head_Z";
-            kinectNames.Add(temp);
-            temp = "4_HipRight_X";
-            kinectNames.Add(temp);
-            temp = "4_HipRight_Y";
-            kinectNames.Add(temp);
-            temp = "4_HipRight_Z";
-            kinectNames.Add(temp);
-            temp = "4_HipLeft_X";
-            kinectNames.Add(temp);
-            temp = "4_HipLeft_Y";
-            kinectNames.Add(temp);
-            temp = "4_HipLeft_Z";
-            kinectNames.Add(temp);
-            temp = "4_ShoulderRight_X";
-            kinectNames.Add(temp);
-            temp = "4_ShoulderRight_Y";
-            kinectNames.Add(temp);
-            temp = "4_ShoulderRight_Z";
-            kinectNames.Add(temp);
-            temp = "4_ShoulderLeft_X";
-            kinectNames.Add(temp);
-            temp = "4_ShoulderLeft_Y";
-            kinectNames.Add(temp);
-            temp = "4_ShoulderLeft_Z";
-            kinectNames.Add(temp);
-            temp = "4_SpineMid_X";
-            kinectNames.Add(temp);
-            temp = "4_SpineMid_Y";
-            kinectNames.Add(temp);
-            temp = "4_SpineMid_Z";
-            kinectNames.Add(temp);
-            temp = "4_SpineShoulder_X";
-            kinectNames.Add(temp);
-            temp = "4_SpineShoulder_Y";
-            kinectNames.Add(temp);
-            temp = "4_SpineShoulder_Z";
-            kinectNames.Add(temp);
-
-            temp = "5_AnkleRight_X";
-            kinectNames.Add(temp);
-            temp = "5_AnkleRight_Y";
-            kinectNames.Add(temp);
-            temp = "5_AnkleRight_Z";
-            kinectNames.Add(temp);
-            temp = "5_AnkleLeft_X";
-            kinectNames.Add(temp);
-            temp = "5_AnkleLeft_Y";
-            kinectNames.Add(temp);
-            temp = "5_AnkleLeft_Z";
-            kinectNames.Add(temp);
-            temp = "5_ElbowRight_X";
-            kinectNames.Add(temp);
-            temp = "5_ElbowRight_Y";
-            kinectNames.Add(temp);
-            temp = "5_ElbowRight_Z";
-            kinectNames.Add(temp);
-            temp = "5_ElbowLeft_X";
-            kinectNames.Add(temp);
-            temp = "5_ElbowLeft_Y";
-            kinectNames.Add(temp);
-            temp = "5_ElbowLeft_Z";
-            kinectNames.Add(temp);
-            temp = "5_HandRight_X";
-            kinectNames.Add(temp);
-            temp = "5_HandRight_Y";
-            kinectNames.Add(temp);
-            temp = "5_HandRight_Z";
-            kinectNames.Add(temp);
-            temp = "5_HandLeft_X";
-            kinectNames.Add(temp);
-            temp = "5_HandLeft_Y";
-            kinectNames.Add(temp);
-            temp = "5_HandLeft_Z";
-            kinectNames.Add(temp);
-            temp = "5_HandRightTip_X";
-            kinectNames.Add(temp);
-            temp = "5_HandRightTip_Y";
-            kinectNames.Add(temp);
-            temp = "5_HandRightTip_Z";
-            kinectNames.Add(temp);
-            temp = "5_HandLeftTip_X";
-            kinectNames.Add(temp);
-            temp = "5_HandLeftTip_Y";
-            kinectNames.Add(temp);
-            temp = "5_HandLeftTip_Z";
-            kinectNames.Add(temp);
-            temp = "5_Head_X";
-            kinectNames.Add(temp);
-            temp = "5_Head_Y";
-            kinectNames.Add(temp);
-            temp = "5_Head_Z";
-            kinectNames.Add(temp);
-            temp = "5_HipRight_X";
-            kinectNames.Add(temp);
-            temp = "5_HipRight_Y";
-            kinectNames.Add(temp);
-            temp = "5_HipRight_Z";
-            kinectNames.Add(temp);
-            temp = "5_HipLeft_X";
-            kinectNames.Add(temp);
-            temp = "5_HipLeft_Y";
-            kinectNames.Add(temp);
-            temp = "5_HipLeft_Z";
-            kinectNames.Add(temp);
-            temp = "5_ShoulderRight_X";
-            kinectNames.Add(temp);
-            temp = "5_ShoulderRight_Y";
-            kinectNames.Add(temp);
-            temp = "5_ShoulderRight_Z";
-            kinectNames.Add(temp);
-            temp = "5_ShoulderLeft_X";
-            kinectNames.Add(temp);
-            temp = "5_ShoulderLeft_Y";
-            kinectNames.Add(temp);
-            temp = "5_ShoulderLeft_Z";
-            kinectNames.Add(temp);
-            temp = "5_SpineMid_X";
-            kinectNames.Add(temp);
-            temp = "5_SpineMid_Y";
-            kinectNames.Add(temp);
-            temp = "5_SpineMid_Z";
-            kinectNames.Add(temp);
-            temp = "5_SpineShoulder_X";
-            kinectNames.Add(temp);
-            temp = "5_SpineShoulder_Y";
-            kinectNames.Add(temp);
-            temp = "5_SpineShoulder_Z";
-            kinectNames.Add(temp);
         }
 
         List<string> lastValues = new List<string>();
 
         public void setMyoValues(List<string> values)
         {
-            
+
             if (isRecording)
             {
                 var update = new FrameObject(startRecordingTime, myoNames, values);
+                var updateChunk = new FrameObject(startChunkTime, myoNames, values);
                 if (!values.SequenceEqual(lastValues))
                 {
                     myMyoRecordingObject.Frames.Add(update);
                     lastValues = values;
+
+                    if (!sendingData)
+                    {
+                        myoChunk.Frames.Add(updateChunk);
+                    }
+
+
                 }
-                
+
+
+
             }
         }
 
@@ -731,7 +297,7 @@ namespace KinectMyo
         {
             if (isRecording)
             {
-            
+
                 int counter = 0;
                 List<string> values = new List<string>();
                 KinectValues = new List<string>();
@@ -740,71 +306,101 @@ namespace KinectMyo
                 {
                     try
                     {
-                        KinectValues.Add(body.Joints[JointType.AnkleRight].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.AnkleRight].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.AnkleRight].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.AnkleLeft].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.AnkleLeft].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.AnkleLeft].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.ElbowRight].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.ElbowRight].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.ElbowRight].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.ElbowLeft].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.ElbowLeft].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.ElbowLeft].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.HandRight].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.HandRight].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.HandRight].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.HandLeft].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.HandLeft].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.HandLeft].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.HandTipRight].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.HandTipRight].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.HandTipRight].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.HandTipLeft].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.HandTipLeft].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.HandTipLeft].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.Head].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.Head].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.Head].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.HipRight].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.HipRight].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.HipRight].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.HipLeft].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.HipLeft].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.HipLeft].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.ShoulderRight].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.ShoulderRight].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.ShoulderRight].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.ShoulderLeft].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.ShoulderLeft].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.ShoulderLeft].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.SpineMid].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.SpineMid].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.SpineMid].Position.Z + "");
-
-                        KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.X + "");
-                        KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.Y + "");
-                        KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.Z + "");
-
-
-                        if (body.Joints[JointType.ShoulderRight].Position.X != 0)
+                        if (body.IsTracked)
                         {
-                            int xxx = counter;
+                            detectCompression(body.Joints[JointType.ShoulderRight].Position.Y);
+                            KinectValues.Add(body.Joints[JointType.AnkleRight].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.AnkleRight].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.AnkleRight].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.AnkleLeft].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.AnkleLeft].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.AnkleLeft].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.ElbowRight].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.ElbowRight].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.ElbowRight].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.ElbowLeft].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.ElbowLeft].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.ElbowLeft].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.HandRight].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.HandRight].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.HandRight].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.HandLeft].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.HandLeft].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.HandLeft].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.HandTipRight].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.HandTipRight].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.HandTipRight].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.HandTipLeft].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.HandTipLeft].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.HandTipLeft].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.Head].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.Head].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.Head].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.HipRight].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.HipRight].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.HipRight].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.HipLeft].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.HipLeft].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.HipLeft].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.ShoulderRight].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.ShoulderRight].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.ShoulderRight].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.ShoulderLeft].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.ShoulderLeft].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.ShoulderLeft].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.SpineMid].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.SpineMid].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.SpineMid].Position.Z + "");
+
+                            KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.X + "");
+                            KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.Y + "");
+                            KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.Z + "");
+
+
+                            if (body.Joints[JointType.ShoulderRight].Position.X != 0)
+                            {
+                                int xxx = counter;
+                            }
+
+                            var update = new FrameObject(startRecordingTime, kinectNames, KinectValues);
+                            myKinectRecordingObject.Frames.Add(update);
+
+
+                            if (compressionCounter > previousKinectCompressionCounter)
+                            {
+                                sendingData = true;
+                                sendChunk();
+                                startChunkTime = DateTime.Now;
+                                myoChunk = new RecordingObject
+                                {
+                                    RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
+                                    ApplicationName = "Myo"
+                                };
+                                kinectChunk = new RecordingObject
+                                {
+                                    RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
+                                    ApplicationName = "Kinect"
+                                };
+
+                                previousKinectCompressionCounter = compressionCounter;
+                            }
+                            var newKinectChunk = new FrameObject(startChunkTime, kinectNames, KinectValues);
+                            kinectChunk.Frames.Add(newKinectChunk);
                         }
+
 
                     }
                     catch
@@ -814,8 +410,7 @@ namespace KinectMyo
                     counter++;
                 }
 
-                var update = new FrameObject(startRecordingTime, kinectNames, KinectValues);
-                myKinectRecordingObject.Frames.Add(update);
+
 
             }
 
@@ -823,6 +418,166 @@ namespace KinectMyo
 
 
         }
+
+
+        #region compressionDetection
+
+        
+
+        private System.Net.Sockets.TcpClient tcpSendingSocketKinect;
+        private System.Net.Sockets.TcpClient tcpSendingSocketMyo;
+        DateTime startChunkTime;
+        RecordingObject kinectChunk;
+        RecordingObject myoChunk;
+        float previousShoulderY = 0;
+        bool goingDown = false;
+        bool goingUp = false;
+        bool CompressionStarted = false;
+        int compressionCounter = 0;
+        int previousKinectCompressionCounter = -1;
+        int previousMyoCompressionCounter = -1;
+        float movingThreshold = (float)0.01;
+
+
+        int TCPKinectSenderPort = 20001;
+        int TCPMyoSenderPort = 20001;
+        string HupIPAddress = "127.0.0.1";
+
+        private void CreateSockets()
+        {
+            //udpSendingSocketKinect = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,
+            // ProtocolType.Udp);
+
+            IPAddress serverAddr = IPAddress.Parse(HupIPAddress);
+
+            //UDPendPoint = new IPEndPoint(serverAddr, TCPKinectSenderPort);
+
+
+        }
+
+
+        private void sendChunk()
+        {
+            
+            sendKinect();
+         //   sendMyo();
+            
+        }
+
+        private async void sendMyo()
+        {
+            //FeedbackObject f = new FeedbackObject(startRecordingTime, feedback, myRecordingObject.ApplicationName);
+
+            try
+            {
+                tcpSendingSocketMyo = new TcpClient(HupIPAddress, TCPMyoSenderPort);
+                // Translate the passed message into ASCII and store it as a Byte array.
+
+                string json = JsonConvert.SerializeObject(myoChunk, Formatting.Indented);
+                byte[] send_buffer = Encoding.ASCII.GetBytes(json);
+                //byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+
+                // Get a client stream for reading and writing.
+                NetworkStream stream = tcpSendingSocketMyo.GetStream();
+
+                // Send the message to the connected TcpServer. 
+                await stream.WriteAsync(send_buffer, 0, send_buffer.Length);
+
+                //stream.Write(data, 0, data.Length);
+
+                //Console.WriteLine("Sent: {0}", json);
+
+                // Close everything.
+                stream.Close();
+
+            }
+            catch
+            {
+                Console.WriteLine("error sending TCP message");
+            }
+
+
+        }
+
+        private async void sendKinect()
+        {
+            //FeedbackObject f = new FeedbackObject(startRecordingTime, feedback, myRecordingObject.ApplicationName);
+
+            try
+            {
+                List <RecordingObject> myRecordings = new List<RecordingObject>();
+                myRecordings.Add(kinectChunk);
+                myRecordings.Add(myoChunk);
+                tcpSendingSocketKinect = new TcpClient(HupIPAddress, TCPKinectSenderPort);
+                // Translate the passed message into ASCII and store it as a Byte array.
+
+                string json = JsonConvert.SerializeObject(myRecordings, Formatting.Indented);
+                sendingData = false;
+                byte[] send_buffer = Encoding.ASCII.GetBytes(json);
+                //byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+
+                // Get a client stream for reading and writing.
+                NetworkStream stream = tcpSendingSocketKinect.GetStream();
+
+                // Send the message to the connected TcpServer. 
+                await stream.WriteAsync(send_buffer, 0, send_buffer.Length);
+                //stream.Write(data, 0, data.Length);
+
+                // Console.WriteLine("Sent: {0}", json);
+
+                // Close everything.
+                stream.Close();
+
+            }
+            catch
+            {
+                Console.WriteLine("error sending TCP message");
+            }
+
+
+        }
+
+        private void detectCompression(float currentShoulderY)
+        {
+
+            if (currentShoulderY > previousShoulderY && currentShoulderY - previousShoulderY > movingThreshold)
+            {
+                if (goingUp == true)
+                {
+
+
+                    goingUp = false;
+                    goingDown = true;
+                    compressionCounter++;
+                    CompressionStarted = true;
+
+                }
+                else
+                {
+
+                    CompressionStarted = false;
+
+                }
+
+
+            }
+            else if (currentShoulderY < previousShoulderY)
+            {
+                goingDown = false;
+                goingUp = true;
+            }
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(
+                                () =>
+                                {
+                                    if (goingDown == true)
+                                        testLabel.Content = "down  " + compressionCounter + " " + currentShoulderY;
+                                    else
+                                        testLabel.Content = "up   " + compressionCounter + " " + currentShoulderY;
+                                }));
+
+            previousShoulderY = currentShoulderY;
+        }
+        #endregion
 
         //private void MyConnector_stopRecordingEvent(object sender)
         //{
@@ -945,6 +700,8 @@ namespace KinectMyo
             }
         }
 
+        public IPEndPoint UDPendPoint { get; private set; }
+
 
         /// <summary>
         /// Handles the color frame data arriving from the sensor
@@ -992,6 +749,7 @@ namespace KinectMyo
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
             isRecording = false;
+
             String myoFileName = myMyoRecordingObject.RecordingID + myMyoRecordingObject.ApplicationName + ".json";
             Console.WriteLine(myoFileName);
             using (StreamWriter sw = new StreamWriter(File.Open(myoFileName, System.IO.FileMode.Append)))
@@ -1000,7 +758,7 @@ namespace KinectMyo
                 s1.Formatting = Formatting.Indented;
                 s1.Serialize(sw, myMyoRecordingObject);
             }
-           
+
             String kinectFileName = myKinectRecordingObject.RecordingID + myKinectRecordingObject.ApplicationName + ".json";
             Console.WriteLine(kinectFileName);
             using (StreamWriter sw = new StreamWriter(File.Open(kinectFileName, System.IO.FileMode.Append)))
