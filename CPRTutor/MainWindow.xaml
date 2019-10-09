@@ -12,7 +12,7 @@
         
 
         <Label Name="isRecordingLabel" Content="" FontSize="12" HorizontalAlignment="Left" Margin="59,49,0,0" VerticalAlignment="Top"/>
-        <Image Name="cprGauge" Margin="10,49,0,298.5" Width="200" Height="160" HorizontalAlignment="Left"/>
+        <Image Name="cprGauge" Margin="10,49,0,298.5" HorizontalAlignment="Left"/>
         <Label Name="compressionLabel" Content="" FontSize="24" HorizontalAlignment="Left" Margin="59,90,0,0" VerticalAlignment="Top"/>
         <Button x:Name="Start" Content="Start" HorizontalAlignment="Center" VerticalAlignment="Top" Click="Start_Recording" Width="86" Margin="280,49,394,0" Height="36"/>
         <Button x:Name="Stop" Content="Stop" HorizontalAlignment="Center" VerticalAlignment="Top" Click="Stop_Recording" Width="86" Margin="397,49,277,0" Height="36"/>

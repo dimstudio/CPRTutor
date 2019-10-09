@@ -39,6 +39,5 @@ namespace CPRTutor
             //}
         }
 
-        public object UniqueProperty { get; internal set; }
     }
 }

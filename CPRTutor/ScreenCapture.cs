@@ -1,38 +1,22 @@
-﻿using Accord.Video;
-using Accord.Video.FFMPEG;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Timers;
+﻿using System;
 using System.Drawing;
-
+using System.Threading;
+using Accord.Video.FFMPEG;
+using System.IO.Compression;
 
 namespace CPRTutor
 {
     class ScreenCapture
     {
-        System.Windows.Threading.DispatcherTimer timer1;
         VideoFileWriter vf;
         DateTime startCaptureTime;
         string filename;
-        int screenWidth = (int)System.Windows.SystemParameters.PrimaryScreenWidth;
-        int screenHeight = (int)System.Windows.SystemParameters.PrimaryScreenHeight;
         Bitmap bmpScreenShot;
-        int i;
+        private Thread myCaptureThread;
+        bool isRecording = false;
+        string filePath;
 
-
-        public ScreenCapture()
-        {
-            timer1 = new System.Windows.Threading.DispatcherTimer();
-            timer1.Interval = TimeSpan.FromMilliseconds(20);
-            timer1.Tick += timer1_Tick;
-            vf = new VideoFileWriter();
-            bmpScreenShot = new Bitmap(screenWidth, screenHeight);
-        }
+        public ScreenCapture(){ }
 
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -42,43 +26,62 @@ namespace CPRTutor
 
         private void captureFunction()
         {
-            try
+            while (isRecording == true)
             {
-                // Bitmap bmpScreenShot = new Bitmap(screenWidth, screenHeight);
-                Graphics gfx = Graphics.FromImage((System.Drawing.Image)bmpScreenShot);
-                gfx.CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(screenWidth, screenHeight));
+                try
+                {
+                    int screenWidth = (int)System.Windows.SystemParameters.PrimaryScreenWidth * 2;
+                    int screenHeight = (int)System.Windows.SystemParameters.PrimaryScreenHeight * 2;
 
-                TimeSpan elapse = DateTime.Now.Subtract(startCaptureTime);
-                Console.WriteLine(i.ToString() + ' ' + elapse);
-                vf.WriteVideoFrame(bmpScreenShot, elapse);
-            }
-            catch (Exception e)
-            {
-                //int x = i;
+                    Graphics gfx = Graphics.FromImage((System.Drawing.Image)bmpScreenShot);
+                    gfx.CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(screenWidth, screenHeight));
+                    System.TimeSpan diff1 = DateTime.Now.Subtract(startCaptureTime);
+                    vf.WriteVideoFrame(bmpScreenShot, diff1);
 
+                }
+                catch
+                {
+
+                }
+
+                Thread.Sleep(40);
             }
-            i++;
+            vf.Close();
+            //string startPath = this.filePath;//folder to add
+            string zipPath = this.filePath + ".zip";//URL for your ZIP file
+            ZipFile.CreateFromDirectory(filePath, zipPath, CompressionLevel.Fastest, true);
         }
 
         public void captureStart(String filePath)
         {
+            isRecording = true;
+            this.filePath = filePath;
             vf = new VideoFileWriter();
             startCaptureTime = DateTime.Now;
-            filename = filePath + DateTime.Now.ToString("yyyy-MM-dd-") + DateTime.Now.Hour.ToString() + "H" + DateTime.Now.Minute.ToString() + "M" + DateTime.Now.Second.ToString() + "S_video.mp4";
+            filename = filePath + "/" + DateTime.Now.ToString("yyyy-MM-dd-") + DateTime.Now.Hour.ToString() + "H" + DateTime.Now.Minute.ToString() + "M" + DateTime.Now.Second.ToString() + "S_video.mp4";
+
+            int screenWidth = (int)System.Windows.SystemParameters.PrimaryScreenWidth * 2;
+            int screenHeight = (int)System.Windows.SystemParameters.PrimaryScreenHeight * 2;
+            bmpScreenShot = new Bitmap(screenWidth, screenHeight);
+
             //vf.Width = screenWidth;
             //vf.Height = screenHeight;
             //vf.FrameSize = 25;
             //vf.VideoCodec = VideoCodec.Default;
             //vf.BitRate = 1000000;
             //vf.Open(filename);
-            vf.Open(filename, screenWidth, screenHeight,25, VideoCodec.Default, 1000000);
-            timer1.Start();
+
+            vf.Open(filename, screenWidth, screenHeight, 25, VideoCodec.Default, 500000);
+
+
+            myCaptureThread = new Thread(new ThreadStart(captureFunction));
+            myCaptureThread.Start();
+
         }
 
         public void captureStop()
         {
-            timer1.Stop();
-            vf.Close();
+            isRecording = false;
         }
     }
 }

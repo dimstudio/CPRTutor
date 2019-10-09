@@ -220,35 +220,15 @@ namespace CPRTutor
         public MyoViewModel()
         {
             this.TimerStart = DateTime.Now;
-            //myConnector = new ConnectorHub.ConnectorHub();
-            //myFeedback = new ConnectorHub.FeedbackHub();
-            //myConnector.init();
-            //myFeedback.init();
-            //myConnector.sendReady();
-            //myConnector.startRecordingEvent += MyConnector_startRecordingEvent;
-            //myConnector.stopRecordingEvent += MyConnector_stopRecordingEvent;
-            //myFeedback.feedbackReceivedEvent += MyFeedback_feedbackReceivedEvent;
 
             myoManager.AccelerometerChanged += UpdateAccelerometer;
             myoManager.GyroscopeChanged += UpdateGyroscope;
             myoManager.OrientationChanged += UpdateOrientation;
             myoManager.EMGChanged += UpdateEMG;
 
-            //setValueNames();
-
         }
 
         #region Events handlers
-
-        /// <summary>
-        /// When message is recieved from the learning hub
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="feedback"></param>
-        //private void MyFeedback_feedbackReceivedEvent(object sender, string feedback)
-        //{
-        //    ReadStream(feedback);
-        //}
 
         /// <summary>
         /// Stop recording message received
@@ -278,41 +258,6 @@ namespace CPRTutor
                         }));
         }
 
-        /// <summary>
-        /// Read the string message received
-        /// </summary>
-        /// <param name="s"></param>
-        //private void ReadStream(String s)
-        //{
-        //    //if the string contains Myo vibrate myo
-        //    if (s.Contains("Myo"))
-        //    {
-        //        MyoManagerClass.pingMyo();
-
-        //    }
-
-        //}
-
-        //private ICommand _buttonClicked;
-
-        /// <summary>
-        /// When the record button is manually clicked
-        /// </summary>
-        //public ICommand ButtonClicked
-        //{
-        //    get
-        //    {
-        //        if (_buttonClicked == null)
-        //        {
-        //            _buttonClicked = new RelayCommand(
-        //                param => this.StartRecordingData(),
-        //                null
-        //                );
-        //        }
-
-        //        return _buttonClicked;
-        //    }
-        //}
 
         /// <summary>
         /// Eventhandler for when Orientation data is received
@@ -325,10 +270,10 @@ namespace CPRTutor
             OrientationX = o.OrientationX;
             OrientationY = o.OrientationY;
             OrientationZ = o.OrientationZ;
-            if (MainWindow.isRecording == true)
-            {
-                SendDataAsync();
-            }
+            //if (MainWindow.isRecording == true)
+            //{
+            //    //SendDataAsync();
+            //}
         }
 
         /// <summary>
@@ -341,10 +286,10 @@ namespace CPRTutor
             GyroscopeX = e.gyroscopeX;
             GyroscopeY = e.gyroscopeY;
             GyroscopeZ = e.gyroscopeZ;
-            if (MainWindow.isRecording == true)
-            {
-                SendDataAsync();
-            }
+            //if (MainWindow.isRecording == true)
+            //{
+            //    //SendDataAsync();
+            //}
         }
 
         /// <summary>
@@ -357,26 +302,13 @@ namespace CPRTutor
             AccelerometerX = a.accelerometerX;
             AccelerometerY = a.accelerometerY;
             AccelerometerZ = a.accelerometerZ;
-            if (MainWindow.isRecording == true)
-            {
-                SendDataAsync();
-            }
+            //if (MainWindow.isRecording == true)
+            //{
+            //    //SendDataAsync();
+            //}
         }
 
-        /// <summary>
-        /// Temporary holders for emg data to be stored 
-        /// </summary>
-        //List<double> EMGPod0data = new List<double>();
-        //List<double> EMGPod1data = new List<double>();
-        //List<double> EMGPod2data = new List<double>();
-        //List<double> EMGPod3data = new List<double>();
-        //List<double> EMGPod4data = new List<double>();
-        //List<double> EMGPod5data = new List<double>();
-        //List<double> EMGPod6data = new List<double>();
-        //List<double> EMGPod7data = new List<double>();
-        /// <summary>
-        /// holder for average emg data of each second
-        /// </summary>
+
         double[] EMGdata = new double[8];
 
         /// <summary>
@@ -386,10 +318,6 @@ namespace CPRTutor
         /// <param name="e"></param>
         private void UpdateEMG(object sender, MyoManagerClass.EMGChangedEventArgs e)
         {
-            //when the timepsan is more than 0.5 secs
-            //if((DateTime.Now - TimerStart).Seconds > 0.5)
-            //{
-                //take the root mean square of whole array and then store it into the master emg data holder
                 EMGdata[0] = e.EMGPod_0;
                 EMGdata[1] = e.EMGPod_1;
                 EMGdata[2] = e.EMGPod_2;
@@ -398,45 +326,14 @@ namespace CPRTutor
                 EMGdata[5] = e.EMGPod_5;
                 EMGdata[6] = e.EMGPod_6;
                 EMGdata[7] = e.EMGPod_7;
-                //calculate grippressure with the master emg data holder
-                //CalculateGripPressureAsync(EMGdata, 15);
-                //debud all the emd data
-                //for(int i = 0; i < EMGdata.Count()-1; i++)
-                //{
-                //    //Debug.WriteLine("EMGdata " + i + " = " + EMGdata[i]);
-                //}
 
                 if (MainWindow.isRecording == true)
                 {
                     SendDataAsync();
                 }
-                ///clear the list that were holding the previous data
-                //TimerStart = DateTime.Now;
-                //EMGPod0data.Clear();
-                //EMGPod1data.Clear();
-                //EMGPod2data.Clear();
-                //EMGPod3data.Clear();
-                //EMGPod4data.Clear();
-                //EMGPod5data.Clear();
-                //EMGPod6data.Clear();
-                //EMGPod7data.Clear();
 
         }
 
-        /// <summary>
-        /// calculate the RootMeanSquare from the array
-        /// </summary>
-        /// <param name="doubleList"></param>
-        /// <returns></returns>
-        //private double RootMeanSquare(double[] doubleList)
-        //{
-        //    double sum = 0;
-        //    for (int i = 0; i < doubleList.Length; i++)
-        //    {
-        //        sum += (doubleList[i] * doubleList[i]);
-        //    }
-        //    return Math.Sqrt(sum / doubleList.Length);
-        //}
 
         #endregion
 
@@ -483,45 +380,7 @@ namespace CPRTutor
         #endregion
 
         #region Send data
-        /// <summary>
-        /// set the names of the TempValues that needs to recorded in the learning hub
-        /// </summary>
-        private void setValueNames()
-        {
-                try
-                {
-                    List<string> names = new List<string>();
-                    names.Add("OrientationW");
-                    names.Add("OrientationX");
-                    names.Add("OrientationY");
-                    names.Add("OrientationZ");
-                    names.Add("AccelerometerX");
-                    names.Add("AccelerometerY");
-                    names.Add("AccelerometerZ");
-                    names.Add("GyroscopeX");
-                    names.Add("GyroscopeY");
-                    names.Add("GyroscopeZ");
-                    names.Add("GripPressure");
-                    names.Add("EMGPod_0");
-                    names.Add("EMGPod_1");
-                    names.Add("EMGPod_2");
-                    names.Add("EMGPod_3");
-                    names.Add("EMGPod_4");
-                    names.Add("EMGPod_5");
-                    names.Add("EMGPod_6");
-                    names.Add("EMGPod_7");
 
-                    //myConnector.setValuesName(names);
-                }
-                catch (Exception ex)
-                {
-                    if (DebugText != ex.ToString())
-                    {
-                        DebugText = ex.ToString();
-                    }
-                }
-
-        }
         /// <summary>
         /// method for sending data Async
         /// </summary>
@@ -547,7 +406,6 @@ namespace CPRTutor
                 TempValues.Add(GyroscopeX.ToString());
                 TempValues.Add(GyroscopeY.ToString());
                 TempValues.Add(GyroscopeZ.ToString());
-                //TempValues.Add(GripPressure.ToString());
                 TempValues.Add(EMGdata[0].ToString());
                 TempValues.Add(EMGdata[1].ToString());
                 TempValues.Add(EMGdata[2].ToString());
@@ -572,68 +430,6 @@ namespace CPRTutor
 
         }
         #endregion
-
-        /// <summary>
-        /// Calculate the GripPressure async
-        /// </summary>
-        /// <param name="currentEmgValues"></param>
-        /// <param name="emgThreshold"></param>
-        //private async void CalculateGripPressureAsync(double[] currentEmgValues, double emgThreshold)
-        //{
-        //    await Task.Run(() => CalculateGripPressure(currentEmgValues, emgThreshold));
-        //}
-
-        /// <summary>
-        /// Method for calculating the GripPressure. Iterate through each emg sensor pod in myo and assign 1 if RMS value is more than the threshold,
-        /// else assign 0. When the RMS value of the Emg pod is more than threshold it means that the the emg recorded higher musvle potential. 
-        /// </summary>
-        /// <param name="e"></param>
-        //private void CalculateGripPressure(double[] currentEmgValues, double emgThreshold)
-        //{
-        //    //temp array that holds 1 or 0 for each of the myo pod to be added at the last
-        //    int[] emgTension = new int[8];
-        //    //temporary value that holds the value of grip pressure 
-        //    int gripEMG = 0;
-
-        //    //iterate through all the emg pods and store 1/0  in emgTension[] depending on 
-        //    //if the RMS is more or less than threshold
-        //    // 0 meaning no tension and 100 meaning lots of tension
-        //    for (int i = 0; i <= 7; i++)
-        //    {
-        //        try
-        //        {
-        //            if (currentEmgValues[i] >= emgThreshold)
-        //            {
-        //                emgTension[i] = 1;
-
-        //            }
-        //            else
-        //            {
-        //                emgTension[i] = 0;
-        //            }
-
-        //        }
-        //        catch
-        //        {
-        //            Debug.WriteLine("Error Calculating GripPressure");
-        //        }
-        //    }
-
-        //    //add all value from emgTension and assign it to gripEmg
-        //    Array.ForEach(emgTension, delegate (int i) { gripEMG += i; });
-        //    //assign it to grippressure
-        //    GripPressure = gripEMG;
-        //    //if the grip pressure is more than 5, or more than 5 pods return high potential readings
-        //    if (gripEMG >=4)
-        //    {
-        //        //vibrate myo
-        //        if (ActivateMyo)
-        //        {
-        //            MyoManagerClass.pingMyo();
-        //        }
-        //        Debug.WriteLine("GripPressure = " + gripEMG);
-        //    }
-        //}
 
     }
 }

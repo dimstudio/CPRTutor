@@ -85,7 +85,7 @@ namespace CPRTutor
             System.IO.Directory.CreateDirectory(sessionPath + sessionName + "/");
 
             myScreenCapture = new ScreenCapture();
-            myScreenCapture.captureStart(sessionPath + sessionName + "/");
+            myScreenCapture.captureStart(sessionPath + sessionName );
             myMyoViewModel = new MyoViewModel();
             myMyoViewModel.ValuesChanged += MyMyoViewModel_ValuesChanged;
 
@@ -159,9 +159,9 @@ namespace CPRTutor
 
                 myScreenCapture.captureStop();
 
-                string startPath = sessionPath + sessionName;//folder to add
-                string zipPath = sessionPath + sessionName+".zip";//URL for your ZIP file
-                ZipFile.CreateFromDirectory(startPath, zipPath, CompressionLevel.Fastest, true);
+                //string startPath = sessionPath + sessionName;//folder to add
+                //string zipPath = sessionPath + sessionName+".zip";//URL for your ZIP file
+                //ZipFile.CreateFromDirectory(startPath, zipPath, CompressionLevel.Fastest, true);
 
             }
         }
@@ -213,18 +213,17 @@ namespace CPRTutor
 
         private void setValueNames()
         {
-            string temp;
             // Myo Attribute Names
-            myoNames.Add("OrientationW");
-            myoNames.Add("OrientationX");
-            myoNames.Add("OrientationY");
-            myoNames.Add("OrientationZ");
-            myoNames.Add("AccelerometerX");
-            myoNames.Add("AccelerometerY");
-            myoNames.Add("AccelerometerZ");
-            myoNames.Add("GyroscopeX");
-            myoNames.Add("GyroscopeY");
-            myoNames.Add("GyroscopeZ");
+            myoNames.Add("Orientation_W");
+            myoNames.Add("Orientation_X");
+            myoNames.Add("Orientation_Y");
+            myoNames.Add("Orientation_Z");
+            myoNames.Add("Accelerometer_X");
+            myoNames.Add("Accelerometer_Y");
+            myoNames.Add("Accelerometer_Z");
+            myoNames.Add("Gyroscope_X");
+            myoNames.Add("Gyroscope_Y");
+            myoNames.Add("Gyroscope_Z");
             //myoNames.Add("GripPressure");
             myoNames.Add("EMGPod_0");
             myoNames.Add("EMGPod_1");
@@ -285,7 +284,7 @@ namespace CPRTutor
 
             kinectNames.Add("Shoulder_Left_X");
             kinectNames.Add("Shoulder_Left_Y");
-            kinectNames.Add("teShoulder_Left_Z");
+            kinectNames.Add("Shoulder_Left_Z");
 
             kinectNames.Add("Spine_Mid_X");
             kinectNames.Add("Spine_Mid_Y");
@@ -438,6 +437,7 @@ namespace CPRTutor
                                     image.UriSource = new Uri(gaugeImage);
                                     image.EndInit();
                                     cprGauge.Source = image;
+                                    cprGauge.Width = 500;
 
                                 }
 
@@ -480,8 +480,8 @@ namespace CPRTutor
         bool CompressionStarted = false;
         int compressionCounter = 0;
         int previousKinectCompressionCounter = -1;
-        int previousMyoCompressionCounter = -1;
-        float movingThreshold = (float)0.005;
+        //int previousMyoCompressionCounter = -1;
+        float movingThreshold = (float)0.001;
 
 
         int TCPKinectSenderPort = 20001;
