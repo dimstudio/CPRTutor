@@ -294,6 +294,8 @@ namespace CPRTutor
             kinectNames.Add("Spine_Shoulder_Y");
             kinectNames.Add("Spine_Shoulder_Z");
 
+            kinectNames.Add("Volume");
+
         }
 
         List<string> lastValues = new List<string>();
@@ -331,7 +333,6 @@ namespace CPRTutor
                 int counter = 0;
                 List<string> values = new List<string>();
                 KinectValues = new List<string>();
-                KinectValues.Add(volumeHandler.averageVolume.ToString());
                 foreach (Body body in bodies)
                 {
                     try
@@ -398,7 +399,7 @@ namespace CPRTutor
                             KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.X + "");
                             KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.Y + "");
                             KinectValues.Add(body.Joints[JointType.SpineShoulder].Position.Z + "");
-
+                            KinectValues.Add(volumeHandler.averageVolume.ToString());
 
                             if (body.Joints[JointType.ShoulderRight].Position.X != 0)
                             {
@@ -481,8 +482,9 @@ namespace CPRTutor
         int compressionCounter = 0;
         int previousKinectCompressionCounter = -1;
         //int previousMyoCompressionCounter = -1;
-        float movingThreshold = (float)0.001;
-
+        float movingThreshold = (float)0.0005;
+        float ccMinDuration = (float)0.4;
+        float ccMaxDuration = (float)0.85;
 
         int TCPKinectSenderPort = 20001;
         int TCPMyoSenderPort = 20001;
@@ -588,7 +590,7 @@ namespace CPRTutor
         {
             IntervalObject tmpAnnotation;
 
-            if (currentShoulderY < previousShoulderY && previousShoulderY - currentShoulderY > movingThreshold)
+            if (currentShoulderY < previousShoulderY && Math.Abs(currentShoulderY) - Math.Abs(previousShoulderY) > movingThreshold)
             {
                 if (goingDown == false)
                 {
@@ -598,22 +600,25 @@ namespace CPRTutor
                     startCompression = DateTime.Now.Subtract(startRecordingTime);
                 }
             }
-            else if (currentShoulderY > previousShoulderY && currentShoulderY - previousShoulderY > movingThreshold)
+            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY) - Math.Abs(previousShoulderY) > movingThreshold)
             {
                 goingUp = true;
                 goingDown = false;
             }
-            else
+            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY) - Math.Abs(previousShoulderY) < movingThreshold)
             {
                 if (goingUp && CompressionStarted)
                 {
+                    endCompression = DateTime.Now.Subtract(startRecordingTime);
+                    double timeDifference = endCompression.Subtract(startCompression).TotalSeconds;
+                    Console.WriteLine("timeDifference: " + timeDifference);
+                    
                     goingUp = false;
                     goingDown = false;
                     CompressionStarted = false;
                     endCompression = DateTime.Now.Subtract(startRecordingTime);
                     tmpAnnotation = new IntervalObject(startCompression, endCompression);
-                    double timeDifference = endCompression.Subtract(startCompression).TotalSeconds;
-                    Console.WriteLine("timeDifference: " + timeDifference);
+                    if timeDifference < ccMaxDuration
                     // if it doesn't contain the item temp
                     if (!detectedCompressions.Intervals.Contains(tmpAnnotation))
                     {
