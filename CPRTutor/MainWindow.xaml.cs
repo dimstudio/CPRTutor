@@ -482,8 +482,8 @@ namespace CPRTutor
         int compressionCounter = 0;
         int previousKinectCompressionCounter = -1;
         //int previousMyoCompressionCounter = -1;
-        float movingThreshold = (float)0.0005;
-        float ccMinDuration = (float)0.4;
+        float movingThreshold = (float)0.003;
+        float ccMinDuration = (float)0.3;
         float ccMaxDuration = (float)0.85;
 
         int TCPKinectSenderPort = 20001;
@@ -590,22 +590,22 @@ namespace CPRTutor
         {
             IntervalObject tmpAnnotation;
 
-            if (currentShoulderY < previousShoulderY && Math.Abs(currentShoulderY) - Math.Abs(previousShoulderY) > movingThreshold)
+            if (currentShoulderY < previousShoulderY && Math.Abs(currentShoulderY-previousShoulderY) > movingThreshold)
             {
                 if (goingDown == false)
                 {
                     goingDown = true;
                     goingUp = false;
                     CompressionStarted = true;
-                    startCompression = DateTime.Now.Subtract(startRecordingTime);
+                    startCompression = DateTime.Now.Subtract(startRecordingTime).Subtract(TimeSpan.FromMilliseconds(35));
                 }
             }
-            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY) - Math.Abs(previousShoulderY) > movingThreshold)
+            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY-previousShoulderY) > movingThreshold)
             {
                 goingUp = true;
                 goingDown = false;
             }
-            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY) - Math.Abs(previousShoulderY) < movingThreshold)
+            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY-previousShoulderY) < movingThreshold)
             {
                 if (goingUp && CompressionStarted)
                 {
@@ -618,12 +618,13 @@ namespace CPRTutor
                     CompressionStarted = false;
                     endCompression = DateTime.Now.Subtract(startRecordingTime);
                     tmpAnnotation = new IntervalObject(startCompression, endCompression);
-                    if timeDifference < ccMaxDuration
-                    // if it doesn't contain the item temp
-                    if (!detectedCompressions.Intervals.Contains(tmpAnnotation))
-                    {
-                        detectedCompressions.Intervals.Add(tmpAnnotation);
-                        compressionCounter++;
+                    if (timeDifference < ccMaxDuration) {
+                        // if it doesn't contain the item temp
+                        if (!detectedCompressions.Intervals.Contains(tmpAnnotation))
+                        {
+                            detectedCompressions.Intervals.Add(tmpAnnotation);
+                            compressionCounter++;
+                        }
                     }
                 }
             }
