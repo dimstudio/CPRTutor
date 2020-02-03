@@ -55,6 +55,7 @@ namespace CPRTutor
         public System.TimeSpan startCompression;
         public System.TimeSpan endCompression;
 
+
         public MainWindow()
         {
             InitializeComponent();
@@ -71,7 +72,10 @@ namespace CPRTutor
         public RecordingObject myMyoRecordingObject;
         public RecordingObject myKinectRecordingObject;
 
-        public AnnotationObject detectedCompressions; 
+        public AnnotationObject detectedCompressions;
+
+        public Dictionary<string, List<int>> targetList;
+
 
         public void Start_Recording(object sender, System.EventArgs e)
         {
@@ -112,8 +116,9 @@ namespace CPRTutor
                 ApplicationName = "CPRTutor_annotations"
             };
 
-        setValueNames();
+            targetList = new Dictionary<string, List<int>>();
 
+            setValueNames();
             CreateSockets();
         }
 
@@ -483,7 +488,7 @@ namespace CPRTutor
         int previousKinectCompressionCounter = -1;
         //int previousMyoCompressionCounter = -1;
         float movingThreshold = (float)0.003;
-        float ccMinDuration = (float)0.3;
+        //float ccMinDuration = (float)0.3;
         float ccMaxDuration = (float)0.85;
 
         int TCPKinectSenderPort = 20001;
@@ -562,7 +567,7 @@ namespace CPRTutor
                 string json = JsonConvert.SerializeObject(myRecordings, Formatting.Indented);
                 sendingData = false;
                 byte[] send_buffer = Encoding.ASCII.GetBytes(json);
-                //byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                byte[] data;
 
                 // Get a client stream for reading and writing
                 NetworkStream stream = tcpSendingSocketKinect.GetStream();
@@ -573,6 +578,22 @@ namespace CPRTutor
 
                 // Console.WriteLine("Sent: {0}", json);
 
+                // Receive the TcpServer.response.
+
+                // Buffer to store the response bytes.
+                data = new Byte[256];
+
+                // String to store the response ASCII representation.
+                String responseData = String.Empty;
+
+                // Read the first batch of the TcpServer response bytes.
+                Int32 bytes = stream.Read(data, 0, data.Length);
+                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                Console.WriteLine("Received: {0}", responseData);
+                //feedbackOutput.Content = responseData;
+                if (compressionCounter > 0) {
+                    processFeedback(responseData);
+                }
                 // Close everything.
                 stream.Close();
 
@@ -582,6 +603,50 @@ namespace CPRTutor
                 Console.WriteLine("error sending TCP message");
             }
 
+
+        }
+
+
+        private void processFeedback(String feedbackString)
+        {
+
+            int noLastCC = 10;
+            int correctCCs = 0;
+            double ratio = 0;
+
+            try
+            {
+                dynamic jsonFeedback = JsonConvert.DeserializeObject(feedbackString);
+                foreach (var property in jsonFeedback)
+                {
+                    if (!targetList.ContainsKey(property.Name))
+                    {
+                        targetList.Add(property.Name, new List<int>());
+                    }
+                    targetList[property.Name].Add((int)property.Value.Value);
+                }
+                feedbackOutput.Content = "";
+                foreach (KeyValuePair<string, List<int>> target in targetList)
+                {
+                    if (target.Value.Count() > noLastCC)
+                    {
+                        List<int> lastNCCs = Enumerable.Reverse(target.Value).Take(noLastCC).Reverse().ToList(); ;
+                        correctCCs = (from temp in lastNCCs where temp.Equals(1) select temp).Count();
+                        ratio = (double)(correctCCs) / noLastCC * 100;
+                    } else
+                    {
+                        correctCCs = (from temp in target.Value where temp.Equals(1) select temp).Count();
+                        ratio = (double)(correctCCs)/ target.Value.Count() * 100;
+                    }
+
+                    feedbackOutput.Content += target.Key + " (correct CC rate " + Math.Round(ratio, 3) + "%): " + String.Join(", ", target.Value) + "\n";
+                }
+
+            } 
+            catch
+            {
+                Console.WriteLine("Failed to process the feedback");
+            }
 
         }
 
@@ -611,7 +676,7 @@ namespace CPRTutor
                 {
                     endCompression = DateTime.Now.Subtract(startRecordingTime);
                     double timeDifference = endCompression.Subtract(startCompression).TotalSeconds;
-                    Console.WriteLine("timeDifference: " + timeDifference);
+                    //Console.WriteLine("timeDifference: " + timeDifference);
                     
                     goingUp = false;
                     goingDown = false;
@@ -619,7 +684,7 @@ namespace CPRTutor
                     endCompression = DateTime.Now.Subtract(startRecordingTime);
                     tmpAnnotation = new IntervalObject(startCompression, endCompression);
                     if (timeDifference < ccMaxDuration) {
-                        // if it doesn't contain the item temp
+                        // if it doesn't contain the item tem
                         if (!detectedCompressions.Intervals.Contains(tmpAnnotation))
                         {
                             detectedCompressions.Intervals.Add(tmpAnnotation);
