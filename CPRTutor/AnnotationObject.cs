@@ -31,12 +31,15 @@ namespace CPRTutor
             this.start = startInterval;
             this.end = endInterval;
 
-            // in case we want the annotation list this is the way to go 
-            // for now they remain blank
-            //for (int i = 0; i < annotationNames.Count; i++)
-            //{
-            //    annotations.Add(annotationNames[i], annotationValues[i]);
-            //}
+        }
+
+
+        public void setAnnotations(List<string> annotationNames, List<string> annotationValues)
+        {
+            for (int i = 0; i < annotationNames.Count; i++)
+            {
+                annotations.Add(annotationNames[i], annotationValues[i]);
+            }
         }
 
     }

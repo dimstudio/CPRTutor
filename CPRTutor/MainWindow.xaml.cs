@@ -1,19 +1,20 @@
-﻿using System;
+﻿using Microsoft.Kinect;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using Microsoft.Kinect;
-using System.IO;
-using Newtonsoft.Json;
-using System.Net.Sockets;
-using System.Net;
-using System.IO.Compression;
-using System.Drawing;
+using WMPLib;
+
 
 namespace CPRTutor
 {
@@ -61,6 +62,7 @@ namespace CPRTutor
             InitializeComponent();
             initMyo();
             initKinect();
+            initFeedback();
         }
 
         private void MyMyoViewModel_ValuesChanged(object sender, MyoViewModel.ValuesChangedEventArgs e)
@@ -76,6 +78,11 @@ namespace CPRTutor
 
         public Dictionary<string, List<int>> targetList;
 
+        public IntervalObject lastCompression;
+
+        public Dictionary<string, string> feedbackAudioFiles;
+        public String feedbackAudioDirectory;
+
 
         public void Start_Recording(object sender, System.EventArgs e)
         {
@@ -89,7 +96,7 @@ namespace CPRTutor
             System.IO.Directory.CreateDirectory(sessionPath + sessionName + "/");
 
             myScreenCapture = new ScreenCapture();
-            myScreenCapture.captureStart(sessionPath + sessionName );
+            myScreenCapture.captureStart(sessionPath + sessionName);
             myMyoViewModel = new MyoViewModel();
             myMyoViewModel.ValuesChanged += MyMyoViewModel_ValuesChanged;
 
@@ -105,10 +112,15 @@ namespace CPRTutor
                 RecordingID = startRecordingTime.ToString("yyyy-MM-dd-HH-mm-sss"),
                 ApplicationName = "Kinect"
             };
-            myoChunk = new RecordingObject
+            //myoChunk = new RecordingObject
+            //{
+            //    RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
+            //    ApplicationName = "Myo"
+            //};
+            feedbackObject = new RecordingObject
             {
-                RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
-                ApplicationName = "Myo"
+                RecordingID = startRecordingTime.ToString("yyyy-MM-dd-HH-mm-sss"),
+                ApplicationName = "Feedback"
             };
             detectedCompressions = new AnnotationObject
             {
@@ -130,7 +142,8 @@ namespace CPRTutor
         public void Stop_Recording(object sender, System.EventArgs e)
         {
 
-            if (isRecording) { 
+            if (isRecording)
+            {
                 isRecording = false;
                 isRecordingLabel.Content = "";
 
@@ -150,6 +163,15 @@ namespace CPRTutor
                     JsonSerializer s2 = new JsonSerializer();
                     s2.Formatting = Formatting.Indented;
                     s2.Serialize(sw, myKinectRecordingObject);
+                }
+
+                String feedbackFileName = sessionPath + sessionName + "/" + feedbackObject.RecordingID + "_" + feedbackObject.ApplicationName + ".json";
+                Console.WriteLine(feedbackFileName);
+                using (StreamWriter sw = new StreamWriter(File.Open(feedbackFileName, System.IO.FileMode.Append)))
+                {
+                    JsonSerializer s3 = new JsonSerializer();
+                    s3.Formatting = Formatting.Indented;
+                    s3.Serialize(sw, feedbackObject);
                 }
 
                 String annotationFileName = sessionPath + sessionName + "/" + detectedCompressions.RecordingID + "_" + detectedCompressions.ApplicationName + ".json";
@@ -207,6 +229,18 @@ namespace CPRTutor
 
         public void initScreenRecorder()
         {
+
+        }
+
+        public void initFeedback()
+        {
+            feedbackAudioDirectory = "CPRTutor.Common.";//Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Common\\");
+            feedbackAudioFiles = new Dictionary<string, string>();
+            feedbackAudioFiles.Add("classRate", "feedback_classRate.mp3");
+            feedbackAudioFiles.Add("classRelease", "feedback_classRelease.mp3");
+            feedbackAudioFiles.Add("classDepth", "feedback_classDepth.mp3");
+            feedbackAudioFiles.Add("armsLocked", "feedback_armsLocked.mp3");
+            feedbackAudioFiles.Add("bodyWeight", "feedback_bodyWeight.mp3");
 
         }
 
@@ -418,8 +452,9 @@ namespace CPRTutor
                             if (compressionCounter > previousKinectCompressionCounter)
                             {
                                 sendingData = true;
-                                sendChunk();
+                                String responseData;
                                 startChunkTime = DateTime.Now;
+
                                 myoChunk = new RecordingObject
                                 {
                                     RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
@@ -430,6 +465,10 @@ namespace CPRTutor
                                     RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
                                     ApplicationName = "Kinect"
                                 };
+                                sendChunk();
+                                
+
+
 
                                 previousKinectCompressionCounter = compressionCounter;
 
@@ -471,8 +510,17 @@ namespace CPRTutor
         }
 
         #endregion
-        #region compressionDetection
 
+        public void setFeedbackValues(List<string> feedbackNames, List<string> feedbackValues)
+        {
+            if (isRecording)
+            {
+                var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
+                feedbackObject.Frames.Add(update);
+            }
+        }
+
+        #region compressionDetection
 
 
         private System.Net.Sockets.TcpClient tcpSendingSocketKinect;
@@ -480,6 +528,7 @@ namespace CPRTutor
         DateTime startChunkTime;
         RecordingObject kinectChunk;
         RecordingObject myoChunk;
+        RecordingObject feedbackObject;
         float previousShoulderY = 0;
         bool goingDown = false;
         bool goingUp = false;
@@ -490,6 +539,7 @@ namespace CPRTutor
         float movingThreshold = (float)0.003;
         //float ccMinDuration = (float)0.3;
         float ccMaxDuration = (float)0.85;
+        public DateTime lastFeedbackPrompted = DateTime.Now;
 
         int TCPKinectSenderPort = 20001;
         int TCPMyoSenderPort = 20001;
@@ -508,102 +558,57 @@ namespace CPRTutor
         }
 
 
-        private void sendChunk()
+
+        private async void sendChunk()
         {
-            
-            sendKinect();
-         //   sendMyo();
-            
-        }
-
-        private async void sendMyo()
-        {
-            //FeedbackObject f = new FeedbackObject(startRecordingTime, feedback, myRecordingObject.ApplicationName);
-
-            try
+            if (compressionCounter > 0)
             {
-                tcpSendingSocketMyo = new TcpClient(HupIPAddress, TCPMyoSenderPort);
-                // Translate the passed message into ASCII and store it as a Byte array.
 
-                string json = JsonConvert.SerializeObject(myoChunk, Formatting.Indented);
-                byte[] send_buffer = Encoding.ASCII.GetBytes(json);
-                //byte[] data = System.Text.Encoding.ASCII.GetBytes(message);
+                try
+                {
+                    List<RecordingObject> myRecordings = new List<RecordingObject>();
+                    myRecordings.Add(kinectChunk);
+                    myRecordings.Add(myoChunk);
 
-                // Get a client stream for reading and writing.
-                NetworkStream stream = tcpSendingSocketMyo.GetStream();
+                    tcpSendingSocketKinect = new TcpClient(HupIPAddress, TCPKinectSenderPort);
+                    // Translate the passed message into ASCII and store it as a Byte array.
 
-                // Send the message to the connected TcpServer. 
-                await stream.WriteAsync(send_buffer, 0, send_buffer.Length);
+                    string json = JsonConvert.SerializeObject(myRecordings, Formatting.Indented);
+                    sendingData = false;
+                    byte[] send_buffer = Encoding.ASCII.GetBytes(json);
+                    byte[] data;
 
-                //stream.Write(data, 0, data.Length);
+                    // Get a client stream for reading and writing
+                    NetworkStream stream = tcpSendingSocketKinect.GetStream();
 
-                //Console.WriteLine("Sent: {0}", json);
+                    // Send the message to the connected TcpServer. 
+                    await stream.WriteAsync(send_buffer, 0, send_buffer.Length);
 
-                // Close everything.
-                stream.Close();
+                    //Console.WriteLine("Sent: {0}", json);
 
-            }
-            catch
-            {
-                Console.WriteLine("error sending TCP message");
-            }
+                    // Receive the TcpServer.response.
 
+                    // Buffer to store the response bytes.
+                    data = new Byte[256];
 
-        }
+                    // String to store the response ASCII representation.
+                    String responseData = String.Empty;
 
-        private async void sendKinect()
-        {
-            //FeedbackObject f = new FeedbackObject(startRecordingTime, feedback, myRecordingObject.ApplicationName);
-
-            try
-            {
-                List <RecordingObject> myRecordings = new List<RecordingObject>();
-                myRecordings.Add(kinectChunk);
-                myRecordings.Add(myoChunk);
-
-                tcpSendingSocketKinect = new TcpClient(HupIPAddress, TCPKinectSenderPort);
-                // Translate the passed message into ASCII and store it as a Byte array.
-
-                string json = JsonConvert.SerializeObject(myRecordings, Formatting.Indented);
-                sendingData = false;
-                byte[] send_buffer = Encoding.ASCII.GetBytes(json);
-                byte[] data;
-
-                // Get a client stream for reading and writing
-                NetworkStream stream = tcpSendingSocketKinect.GetStream();
-
-                // Send the message to the connected TcpServer. 
-                await stream.WriteAsync(send_buffer, 0, send_buffer.Length);
-                //stream.Write(data, 0, data.Length);
-
-                // Console.WriteLine("Sent: {0}", json);
-
-                // Receive the TcpServer.response.
-
-                // Buffer to store the response bytes.
-                data = new Byte[256];
-
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
-
-                // Read the first batch of the TcpServer response bytes.
-                Int32 bytes = stream.Read(data, 0, data.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);
-                //feedbackOutput.Content = responseData;
-                if (compressionCounter > 0) {
+                    // Read the first batch of the TcpServer response bytes.
+                    Int32 bytes = stream.Read(data, 0, data.Length);
+                    responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                    Console.WriteLine("Received: {0}", responseData);
+                    //feedbackOutput.Content = responseData;
                     processFeedback(responseData);
+                    // Close everything.
+                    stream.Close();
+
                 }
-                // Close everything.
-                stream.Close();
-
+                catch
+                {
+                    Console.WriteLine("error sending TCP message");
+                }
             }
-            catch
-            {
-                Console.WriteLine("error sending TCP message");
-            }
-
-
         }
 
 
@@ -613,6 +618,16 @@ namespace CPRTutor
             int noLastCC = 10;
             int correctCCs = 0;
             double ratio = 0;
+            double errorRate = 0;
+            List<string> annotationNames = new List<string>();
+            List<string> annotationValues = new List<string>();
+            List<int> errorRates = new List<int>();
+            TimeSpan deltaFeedback;
+            TimeSpan feedbackTimestamp;
+            List<string> feedbackNames = new List<string>();
+            List<string> feedbackValues = new List<string>();
+            String worstTargetName = "";
+            Double worstTargetValue = 0;
 
             try
             {
@@ -624,8 +639,14 @@ namespace CPRTutor
                         targetList.Add(property.Name, new List<int>());
                     }
                     targetList[property.Name].Add((int)property.Value.Value);
+
+                    // save the property names and values in the two lists 
+                    annotationNames.Add(property.Name);
+                    annotationValues.Add((property.Value.Value).ToString());
                 }
                 feedbackOutput.Content = "";
+                // set the annoation names and values in the annotation object 
+                lastCompression.setAnnotations(annotationNames, annotationValues);
                 foreach (KeyValuePair<string, List<int>> target in targetList)
                 {
                     if (target.Value.Count() > noLastCC)
@@ -633,16 +654,51 @@ namespace CPRTutor
                         List<int> lastNCCs = Enumerable.Reverse(target.Value).Take(noLastCC).Reverse().ToList(); ;
                         correctCCs = (from temp in lastNCCs where temp.Equals(1) select temp).Count();
                         ratio = (double)(correctCCs) / noLastCC * 100;
-                    } else
+                    }
+                    else
                     {
                         correctCCs = (from temp in target.Value where temp.Equals(1) select temp).Count();
-                        ratio = (double)(correctCCs)/ target.Value.Count() * 100;
+                        ratio = (double)(correctCCs) / target.Value.Count();
+                        errorRate = 100 - Math.Round((ratio * 100), 1);
                     }
 
-                    feedbackOutput.Content += target.Key + " (correct CC rate " + Math.Round(ratio, 3) + "%): " + String.Join(", ", target.Value) + "\n";
+                    feedbackOutput.Content += target.Key + " (correct CC rate " + (errorRate.ToString()) + "%): " + String.Join(", ", target.Value) + "\n";
+
+                    if (errorRate > worstTargetValue) {
+                        worstTargetValue = errorRate;
+                        worstTargetName = target.Key;
+                    }
+
+              
+                }
+                // check if 10s are passed      
+                deltaFeedback = DateTime.Now.Subtract(lastFeedbackPrompted);
+                if (deltaFeedback > TimeSpan.FromSeconds(10) && worstTargetValue>50)
+                {
+                    Console.WriteLine("10 seconds are passed: "+deltaFeedback.TotalSeconds.ToString()
+                        +" worst target: "+worstTargetName+" target value: "+worstTargetValue.ToString());
+                    feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
+
+                    feedbackNames.Add("errorRate");
+                    feedbackValues.Add((worstTargetValue / 100).ToString());
+                    feedbackNames.Add("feedbackDevice");
+                    feedbackValues.Add("audio");
+                    feedbackNames.Add("targetClass");
+                    feedbackValues.Add(worstTargetName);
+                    feedbackNames.Add("feedbackMessage");
+                    feedbackValues.Add(feedbackAudioFiles[worstTargetName]);
+
+                    var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
+                    feedbackObject.Frames.Add(update);
+                    lastFeedbackPrompted = DateTime.Now;
+                    promptFeedback(worstTargetName,"audio");
+                }
+                else
+                {
+                    Console.WriteLine("10 seconds are NOT passed");
                 }
 
-            } 
+            }
             catch
             {
                 Console.WriteLine("Failed to process the feedback");
@@ -650,12 +706,36 @@ namespace CPRTutor
 
         }
 
+        private void promptFeedback(String target, String channel)
+        {
+            if (channel == "audio"){
+
+                WindowsMediaPlayer wmp = new WindowsMediaPlayer();
+                Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(
+                    feedbackAudioDirectory+feedbackAudioFiles[target]);
+                var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
+                Console.WriteLine(files.ToString());
+                string temppath = Path.GetTempPath() + "\\temp.mp3";
+                using (Stream output = new FileStream(temppath, FileMode.Create))
+                {
+                    byte[] buffer = new byte[32 * 1024];
+                    int read;
+
+                    while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        output.Write(buffer, 0, read);
+                    }
+                }
+                wmp.URL = temppath;
+                wmp.controls.play();
+            }
+        }
 
         private void detectCompression(float currentShoulderY)
         {
             IntervalObject tmpAnnotation;
 
-            if (currentShoulderY < previousShoulderY && Math.Abs(currentShoulderY-previousShoulderY) > movingThreshold)
+            if (currentShoulderY < previousShoulderY && Math.Abs(currentShoulderY - previousShoulderY) > movingThreshold)
             {
                 if (goingDown == false)
                 {
@@ -665,36 +745,39 @@ namespace CPRTutor
                     startCompression = DateTime.Now.Subtract(startRecordingTime).Subtract(TimeSpan.FromMilliseconds(35));
                 }
             }
-            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY-previousShoulderY) > movingThreshold)
+            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY - previousShoulderY) > movingThreshold)
             {
                 goingUp = true;
                 goingDown = false;
             }
-            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY-previousShoulderY) < movingThreshold)
+            else if (currentShoulderY > previousShoulderY && Math.Abs(currentShoulderY - previousShoulderY) < movingThreshold)
             {
                 if (goingUp && CompressionStarted)
                 {
                     endCompression = DateTime.Now.Subtract(startRecordingTime);
                     double timeDifference = endCompression.Subtract(startCompression).TotalSeconds;
                     //Console.WriteLine("timeDifference: " + timeDifference);
-                    
+
                     goingUp = false;
                     goingDown = false;
                     CompressionStarted = false;
                     endCompression = DateTime.Now.Subtract(startRecordingTime);
                     tmpAnnotation = new IntervalObject(startCompression, endCompression);
-                    if (timeDifference < ccMaxDuration) {
+                    if (timeDifference < ccMaxDuration)
+                    {
                         // if it doesn't contain the item tem
                         if (!detectedCompressions.Intervals.Contains(tmpAnnotation))
                         {
                             detectedCompressions.Intervals.Add(tmpAnnotation);
                             compressionCounter++;
+                            lastCompression = tmpAnnotation;
                         }
                     }
                 }
             }
-            
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => {
+
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
                 if (goingDown == true)
                     compressionLabel.Content = "c.c. #" + compressionCounter + " down";
                 else
@@ -759,12 +842,11 @@ namespace CPRTutor
 
 
 
-
-
-
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-       
+
+            // delete temp file
+            File.Delete(Path.GetTempPath() + "\\temp.mp3");
 
             if (this.colorFrameReader != null)
             {
