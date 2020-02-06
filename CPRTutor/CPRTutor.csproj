@@ -207,6 +207,21 @@
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\feedback_armsLocked.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\feedback_bodyWeight.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\feedback_classDepth.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\feedback_classRate.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common\feedback_classRelease.wav" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>

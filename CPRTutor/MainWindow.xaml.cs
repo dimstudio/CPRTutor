@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -353,7 +354,7 @@ namespace CPRTutor
 
                     if (!sendingData)
                     {
-                        myoChunk.Frames.Add(updateChunk);
+                        //myoChunk.Frames.Add(updateChunk);
                     }
 
 
@@ -598,7 +599,6 @@ namespace CPRTutor
                     Int32 bytes = stream.Read(data, 0, data.Length);
                     responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                     Console.WriteLine("Received: {0}", responseData);
-                    //feedbackOutput.Content = responseData;
                     processFeedback(responseData);
                     // Close everything.
                     stream.Close();
@@ -616,6 +616,10 @@ namespace CPRTutor
         {
 
             int noLastCC = 10;
+            int feedbackFrequencyInSeconds = 10;
+            int feedbackErrorRateThreshold = 50;
+
+
             int correctCCs = 0;
             double ratio = 0;
             double errorRate = 0;
@@ -644,58 +648,63 @@ namespace CPRTutor
                     annotationNames.Add(property.Name);
                     annotationValues.Add((property.Value.Value).ToString());
                 }
-                feedbackOutput.Content = "";
+                sharpflowOutput.Content = "";
                 // set the annoation names and values in the annotation object 
                 lastCompression.setAnnotations(annotationNames, annotationValues);
                 foreach (KeyValuePair<string, List<int>> target in targetList)
                 {
-                    if (target.Value.Count() > noLastCC)
-                    {
+                    if (target.Value.Count() > noLastCC) {
                         List<int> lastNCCs = Enumerable.Reverse(target.Value).Take(noLastCC).Reverse().ToList(); ;
                         correctCCs = (from temp in lastNCCs where temp.Equals(1) select temp).Count();
-                        ratio = (double)(correctCCs) / noLastCC * 100;
+                        ratio = (double)(correctCCs) / noLastCC;
                     }
-                    else
-                    {
+                    else {
                         correctCCs = (from temp in target.Value where temp.Equals(1) select temp).Count();
                         ratio = (double)(correctCCs) / target.Value.Count();
-                        errorRate = 100 - Math.Round((ratio * 100), 1);
                     }
-
-                    feedbackOutput.Content += target.Key + " (correct CC rate " + (errorRate.ToString()) + "%): " + String.Join(", ", target.Value) + "\n";
+                    errorRate = 100 - Math.Round((ratio * 100), 1);
 
                     if (errorRate > worstTargetValue) {
                         worstTargetValue = errorRate;
                         worstTargetName = target.Key;
                     }
 
-              
-                }
-                // check if 10s are passed      
-                deltaFeedback = DateTime.Now.Subtract(lastFeedbackPrompted);
-                if (deltaFeedback > TimeSpan.FromSeconds(10) && worstTargetValue>50)
-                {
-                    Console.WriteLine("10 seconds are passed: "+deltaFeedback.TotalSeconds.ToString()
-                        +" worst target: "+worstTargetName+" target value: "+worstTargetValue.ToString());
-                    feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
+                    sharpflowOutput.Content += target.Key + " (err. " + (errorRate.ToString()) + "%) ";// + String.Join(", ", target.Value) + "\n";
 
-                    feedbackNames.Add("errorRate");
-                    feedbackValues.Add((worstTargetValue / 100).ToString());
-                    feedbackNames.Add("feedbackDevice");
-                    feedbackValues.Add("audio");
-                    feedbackNames.Add("targetClass");
-                    feedbackValues.Add(worstTargetName);
-                    feedbackNames.Add("feedbackMessage");
-                    feedbackValues.Add(feedbackAudioFiles[worstTargetName]);
-
-                    var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
-                    feedbackObject.Frames.Add(update);
-                    lastFeedbackPrompted = DateTime.Now;
-                    promptFeedback(worstTargetName,"audio");
                 }
-                else
-                {
-                    Console.WriteLine("10 seconds are NOT passed");
+                if (feedback_activated.IsChecked.HasValue) {
+
+                    if (feedback_activated.IsChecked.Value == true)
+                    {
+
+                        // check if feedbackFrequencyInSeconds are passed      
+                        deltaFeedback = DateTime.Now.Subtract(lastFeedbackPrompted);
+                        if (deltaFeedback > TimeSpan.FromSeconds(feedbackFrequencyInSeconds)
+                            && worstTargetValue > feedbackErrorRateThreshold && compressionCounter > 5)
+                        {
+                            Console.WriteLine(feedbackFrequencyInSeconds.ToString() + " seconds are passed: " + deltaFeedback.TotalSeconds.ToString()
+                                + " worst target: " + worstTargetName + " target value: " + worstTargetValue.ToString());
+                            feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
+
+                            feedbackNames.Add("errorRate");
+                            feedbackValues.Add((worstTargetValue / 100).ToString());
+                            feedbackNames.Add("feedbackDevice");
+                            feedbackValues.Add("audio");
+                            feedbackNames.Add("targetClass");
+                            feedbackValues.Add(worstTargetName);
+                            feedbackNames.Add("feedbackMessage");
+                            feedbackValues.Add(feedbackAudioFiles[worstTargetName]);
+
+                            var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
+                            feedbackObject.Frames.Add(update);
+                            lastFeedbackPrompted = DateTime.Now;
+                            promptFeedback(worstTargetName, "audio");
+                        }
+                        else
+                        {
+                            Console.WriteLine("10 seconds are NOT passed");
+                        }
+                    }
                 }
 
             }
@@ -708,27 +717,25 @@ namespace CPRTutor
 
         private void promptFeedback(String target, String channel)
         {
+            feedback_Output.Content = channel + " feedback prompted: " + target;
+
             if (channel == "audio"){
 
-                WindowsMediaPlayer wmp = new WindowsMediaPlayer();
-                Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(
-                    feedbackAudioDirectory+feedbackAudioFiles[target]);
-                var files = Assembly.GetExecutingAssembly().GetManifestResourceNames();
-                Console.WriteLine(files.ToString());
-                string temppath = Path.GetTempPath() + "\\temp.mp3";
-                using (Stream output = new FileStream(temppath, FileMode.Create))
-                {
-                    byte[] buffer = new byte[32 * 1024];
-                    int read;
-
-                    while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        output.Write(buffer, 0, read);
-                    }
-                }
-                wmp.URL = temppath;
-                wmp.controls.play();
+                SoundPlayer audio = new SoundPlayer();
+                if (target == "classRate")
+                    audio = new SoundPlayer(Properties.Resources.feedback_classRate);
+                if (target == "classDepth")
+                    audio = new SoundPlayer(Properties.Resources.feedback_classDepth);
+                if (target == "classRelease")
+                    audio = new SoundPlayer(Properties.Resources.feedback_classRelease);
+                if (target == "bodyWeight")
+                    audio = new SoundPlayer(Properties.Resources.feedback_bodyWeight);
+                if (target == "armsLocked")
+                    audio = new SoundPlayer(Properties.Resources.feedback_armsLocked);
+                audio.Play();
             }
+
+            feedback_Output.Content = "";
         }
 
         private void detectCompression(float currentShoulderY)
@@ -845,8 +852,7 @@ namespace CPRTutor
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
 
-            // delete temp file
-            File.Delete(Path.GetTempPath() + "\\temp.mp3");
+
 
             if (this.colorFrameReader != null)
             {
@@ -871,7 +877,6 @@ namespace CPRTutor
             Environment.Exit(0);
 
         }
-
 
     }
 
