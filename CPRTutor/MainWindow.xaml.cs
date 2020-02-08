@@ -150,39 +150,34 @@ namespace CPRTutor
 
                 String myoFileName = sessionPath + sessionName + "/" + myMyoRecordingObject.RecordingID + "_" + myMyoRecordingObject.ApplicationName + ".json";
                 Console.WriteLine(myoFileName);
+                JsonSerializer s = new JsonSerializer();
+                s.Formatting = Formatting.Indented;
+                s.NullValueHandling = NullValueHandling.Include;
+               
                 using (StreamWriter sw = new StreamWriter(File.Open(myoFileName, System.IO.FileMode.Append)))
                 {
-                    JsonSerializer s1 = new JsonSerializer();
-                    s1.Formatting = Formatting.Indented;
-                    s1.Serialize(sw, myMyoRecordingObject);
+                    s.Serialize(sw, myMyoRecordingObject);
                 }
 
                 String kinectFileName = sessionPath + sessionName + "/" + myKinectRecordingObject.RecordingID + "_" + myKinectRecordingObject.ApplicationName + ".json";
                 Console.WriteLine(kinectFileName);
                 using (StreamWriter sw = new StreamWriter(File.Open(kinectFileName, System.IO.FileMode.Append)))
                 {
-                    JsonSerializer s2 = new JsonSerializer();
-                    s2.Formatting = Formatting.Indented;
-                    s2.Serialize(sw, myKinectRecordingObject);
+                    s.Serialize(sw, myKinectRecordingObject);
                 }
 
                 String feedbackFileName = sessionPath + sessionName + "/" + feedbackObject.RecordingID + "_" + feedbackObject.ApplicationName + ".json";
                 Console.WriteLine(feedbackFileName);
                 using (StreamWriter sw = new StreamWriter(File.Open(feedbackFileName, System.IO.FileMode.Append)))
                 {
-                    JsonSerializer s3 = new JsonSerializer();
-                    s3.Formatting = Formatting.Indented;
-                    s3.Serialize(sw, feedbackObject);
+                    s.Serialize(sw, feedbackObject);
                 }
 
-                String annotationFileName = sessionPath + sessionName + "/" + detectedCompressions.RecordingID + "_" + detectedCompressions.ApplicationName + ".json";
-
+                String annotationFileName = sessionPath + sessionName + "/" + detectedCompressions.RecordingID + "_" + detectedCompressions.ApplicationName + ".json"; 
                 Console.WriteLine(annotationFileName);
                 using (StreamWriter sw = new StreamWriter(File.Open(annotationFileName, System.IO.FileMode.Append)))
                 {
-                    JsonSerializer s3 = new JsonSerializer();
-                    s3.Formatting = Formatting.Indented;
-                    s3.Serialize(sw, detectedCompressions);
+                   s.Serialize(sw, detectedCompressions);
                 }
 
                 myScreenCapture.captureStop();
@@ -352,9 +347,9 @@ namespace CPRTutor
                     myMyoRecordingObject.Frames.Add(update);
                     lastValues = values;
 
-                    if (!sendingData)
+                    if (!sendingData && myoChunk!=null)
                     {
-                        //myoChunk.Frames.Add(updateChunk);
+                        myoChunk.Frames.Add(updateChunk);
                     }
 
 
@@ -453,9 +448,9 @@ namespace CPRTutor
                             if (compressionCounter > previousKinectCompressionCounter)
                             {
                                 sendingData = true;
-                                String responseData;
+                                sendChunk();
+                                //String responseData;
                                 startChunkTime = DateTime.Now;
-
                                 myoChunk = new RecordingObject
                                 {
                                     RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
@@ -466,30 +461,30 @@ namespace CPRTutor
                                     RecordingID = startChunkTime.ToString("yyyy-MM-dd-HH-mm-sss"),
                                     ApplicationName = "Kinect"
                                 };
-                                sendChunk();
-                                
+
 
 
 
                                 previousKinectCompressionCounter = compressionCounter;
 
-                                string gaugeImage = @"C:\Users\Daniele-WIN10\Documents\GitHub\SharpFlow\gauge.png";
-                                if (File.Exists(gaugeImage))
-                                {
-                                    BitmapImage image = new BitmapImage();
-                                    image.BeginInit();
-                                    image.CacheOption = BitmapCacheOption.OnLoad;
-                                    image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-                                    image.UriSource = new Uri(gaugeImage);
-                                    image.EndInit();
-                                    cprGauge.Source = image;
-                                    cprGauge.Width = 500;
+                                //string gaugeImage = @"C:\Users\Daniele-WIN10\Documents\GitHub\SharpFlow\gauge.png";
+                                //if (File.Exists(gaugeImage))
+                                //{
+                                //    BitmapImage image = new BitmapImage();
+                                //    image.BeginInit();
+                                //    image.CacheOption = BitmapCacheOption.OnLoad;
+                                //    image.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                                //    image.UriSource = new Uri(gaugeImage);
+                                //    image.EndInit();
+                                //    cprGauge.Source = image;
+                                //    cprGauge.Width = 500;
 
-                                }
+                                //}
 
                             }
                             var newKinectChunk = new FrameObject(startChunkTime, kinectNames, KinectValues);
                             kinectChunk.Frames.Add(newKinectChunk);
+                            //Console.WriteLine("Addded new kinectChunk: {0}", newKinectChunk.ToString());
                         }
 
 
@@ -536,33 +531,24 @@ namespace CPRTutor
         bool CompressionStarted = false;
         int compressionCounter = 0;
         int previousKinectCompressionCounter = -1;
-        //int previousMyoCompressionCounter = -1;
         float movingThreshold = (float)0.003;
-        //float ccMinDuration = (float)0.3;
+
         float ccMaxDuration = (float)0.85;
         public DateTime lastFeedbackPrompted = DateTime.Now;
 
         int TCPKinectSenderPort = 20001;
-        int TCPMyoSenderPort = 20001;
+        //int TCPMyoSenderPort = 20001;
         string HupIPAddress = "127.0.0.1";
 
-        private void CreateSockets()
-        {
-            //udpSendingSocketKinect = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,
-            // ProtocolType.Udp);
-
+        private void CreateSockets(){
             IPAddress serverAddr = IPAddress.Parse(HupIPAddress);
-
-            //UDPendPoint = new IPEndPoint(serverAddr, TCPKinectSenderPort);
-
 
         }
 
 
-
         private async void sendChunk()
         {
-            if (compressionCounter > 0)
+            if (compressionCounter > 0 && kinectChunk.Frames.Count>0)
             {
 
                 try
@@ -570,38 +556,36 @@ namespace CPRTutor
                     List<RecordingObject> myRecordings = new List<RecordingObject>();
                     myRecordings.Add(kinectChunk);
                     myRecordings.Add(myoChunk);
+                    Console.WriteLine("Sent: {0}", kinectChunk.ToString());
 
                     tcpSendingSocketKinect = new TcpClient(HupIPAddress, TCPKinectSenderPort);
-                    // Translate the passed message into ASCII and store it as a Byte array.
 
                     string json = JsonConvert.SerializeObject(myRecordings, Formatting.Indented);
                     sendingData = false;
                     byte[] send_buffer = Encoding.ASCII.GetBytes(json);
                     byte[] data;
 
-                    // Get a client stream for reading and writing
                     NetworkStream stream = tcpSendingSocketKinect.GetStream();
-
-                    // Send the message to the connected TcpServer. 
                     await stream.WriteAsync(send_buffer, 0, send_buffer.Length);
 
-                    //Console.WriteLine("Sent: {0}", json);
-
-                    // Receive the TcpServer.response.
-
-                    // Buffer to store the response bytes.
                     data = new Byte[256];
 
-                    // String to store the response ASCII representation.
                     String responseData = String.Empty;
-
-                    // Read the first batch of the TcpServer response bytes.
-                    Int32 bytes = stream.Read(data, 0, data.Length);
-                    responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                    Console.WriteLine("Received: {0}", responseData);
-                    processFeedback(responseData);
-                    // Close everything.
-                    stream.Close();
+                    try
+                    {
+                        Int32 bytes = stream.Read(data, 0, data.Length);
+                        responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+                        Console.WriteLine("Received: {0}", responseData);
+                        processFeedback(responseData);
+                        stream.Close();
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Fail to process stream");
+                    }
+                   
+                    
+                    
 
                 }
                 catch
@@ -632,17 +616,24 @@ namespace CPRTutor
             List<string> feedbackValues = new List<string>();
             String worstTargetName = "";
             Double worstTargetValue = 0;
+            bool emptyResults = false;
+            int value;
 
             try
             {
                 dynamic jsonFeedback = JsonConvert.DeserializeObject(feedbackString);
                 foreach (var property in jsonFeedback)
                 {
-                    if (!targetList.ContainsKey(property.Name))
-                    {
+                    if (!targetList.ContainsKey(property.Name)) {
                         targetList.Add(property.Name, new List<int>());
                     }
-                    targetList[property.Name].Add((int)property.Value.Value);
+                    if (int.TryParse(property.Value.Value.ToString(), out value)){
+                        targetList[property.Name].Add((int)property.Value.Value);
+                        emptyResults = false;
+                    } else {
+                        //targetList[property.Name].Add("");
+                        emptyResults = true;
+                    }
 
                     // save the property names and values in the two lists 
                     annotationNames.Add(property.Name);
@@ -651,62 +642,70 @@ namespace CPRTutor
                 sharpflowOutput.Content = "";
                 // set the annoation names and values in the annotation object 
                 lastCompression.setAnnotations(annotationNames, annotationValues);
-                foreach (KeyValuePair<string, List<int>> target in targetList)
+
+                if (!emptyResults)
                 {
-                    if (target.Value.Count() > noLastCC) {
-                        List<int> lastNCCs = Enumerable.Reverse(target.Value).Take(noLastCC).Reverse().ToList(); ;
-                        correctCCs = (from temp in lastNCCs where temp.Equals(1) select temp).Count();
-                        ratio = (double)(correctCCs) / noLastCC;
-                    }
-                    else {
-                        correctCCs = (from temp in target.Value where temp.Equals(1) select temp).Count();
-                        ratio = (double)(correctCCs) / target.Value.Count();
-                    }
-                    errorRate = 100 - Math.Round((ratio * 100), 1);
-
-                    if (errorRate > worstTargetValue) {
-                        worstTargetValue = errorRate;
-                        worstTargetName = target.Key;
-                    }
-
-                    sharpflowOutput.Content += target.Key + " (err. " + (errorRate.ToString()) + "%) ";// + String.Join(", ", target.Value) + "\n";
-
-                }
-                if (feedback_activated.IsChecked.HasValue) {
-
-                    if (feedback_activated.IsChecked.Value == true)
+                    foreach (KeyValuePair<string, List<int>> target in targetList)
                     {
-
-                        // check if feedbackFrequencyInSeconds are passed      
-                        deltaFeedback = DateTime.Now.Subtract(lastFeedbackPrompted);
-                        if (deltaFeedback > TimeSpan.FromSeconds(feedbackFrequencyInSeconds)
-                            && worstTargetValue > feedbackErrorRateThreshold && compressionCounter > 5)
+                        if (target.Value.Count() > noLastCC)
                         {
-                            Console.WriteLine(feedbackFrequencyInSeconds.ToString() + " seconds are passed: " + deltaFeedback.TotalSeconds.ToString()
-                                + " worst target: " + worstTargetName + " target value: " + worstTargetValue.ToString());
-                            feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
-
-                            feedbackNames.Add("errorRate");
-                            feedbackValues.Add((worstTargetValue / 100).ToString());
-                            feedbackNames.Add("feedbackDevice");
-                            feedbackValues.Add("audio");
-                            feedbackNames.Add("targetClass");
-                            feedbackValues.Add(worstTargetName);
-                            feedbackNames.Add("feedbackMessage");
-                            feedbackValues.Add(feedbackAudioFiles[worstTargetName]);
-
-                            var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
-                            feedbackObject.Frames.Add(update);
-                            lastFeedbackPrompted = DateTime.Now;
-                            promptFeedback(worstTargetName, "audio");
+                            List<int> lastNCCs = Enumerable.Reverse(target.Value).Take(noLastCC).Reverse().ToList(); ;
+                            correctCCs = (from temp in lastNCCs where temp.Equals(1) select temp).Count();
+                            ratio = (double)(correctCCs) / noLastCC;
                         }
                         else
                         {
-                            Console.WriteLine("10 seconds are NOT passed");
+                            correctCCs = (from temp in target.Value where temp.Equals(1) select temp).Count();
+                            ratio = (double)(correctCCs) / target.Value.Count();
+                        }
+                        errorRate = 100 - Math.Round((ratio * 100), 1);
+
+                        if (errorRate > worstTargetValue)
+                        {
+                            worstTargetValue = errorRate;
+                            worstTargetName = target.Key;
+                        }
+
+                        sharpflowOutput.Content += target.Key + " (err. " + (errorRate.ToString()) + "%) ";// + String.Join(", ", target.Value) + "\n";
+
+                    }
+                    if (feedback_activated.IsChecked.HasValue)
+                    {
+
+                        if (feedback_activated.IsChecked.Value == true)
+                        {
+
+                            // check if feedbackFrequencyInSeconds are passed      
+                            deltaFeedback = DateTime.Now.Subtract(lastFeedbackPrompted);
+                            if (deltaFeedback > TimeSpan.FromSeconds(feedbackFrequencyInSeconds)
+                                && worstTargetValue > feedbackErrorRateThreshold && compressionCounter > 5)
+                            {
+                                Console.WriteLine(feedbackFrequencyInSeconds.ToString() + " seconds are passed: " + deltaFeedback.TotalSeconds.ToString()
+                                    + " worst target: " + worstTargetName + " target value: " + worstTargetValue.ToString());
+                                feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
+
+                                feedbackNames.Add("errorRate");
+                                feedbackValues.Add((worstTargetValue / 100).ToString());
+                                feedbackNames.Add("feedbackDevice");
+                                feedbackValues.Add("audio");
+                                feedbackNames.Add("targetClass");
+                                feedbackValues.Add(worstTargetName);
+                                feedbackNames.Add("feedbackMessage");
+                                feedbackValues.Add("feedback_" + worstTargetName + ".wav");
+
+                                var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
+                                feedbackObject.Frames.Add(update);
+                                lastFeedbackPrompted = DateTime.Now;
+                                promptFeedback(worstTargetName, "audio");
+
+                            }
+                            else
+                            {
+                                Console.WriteLine("10 seconds are NOT passed");
+                            }
                         }
                     }
                 }
-
             }
             catch
             {
@@ -717,8 +716,8 @@ namespace CPRTutor
 
         private void promptFeedback(String target, String channel)
         {
-            feedback_Output.Content = channel + " feedback prompted: " + target;
-
+            feedbackOutput.Content = channel + " feedback prompted: " + target;
+            feedbackIcon.Visibility = Visibility.Visible;
             if (channel == "audio"){
 
                 SoundPlayer audio = new SoundPlayer();
@@ -734,8 +733,8 @@ namespace CPRTutor
                     audio = new SoundPlayer(Properties.Resources.feedback_armsLocked);
                 audio.Play();
             }
-
-            feedback_Output.Content = "";
+            feedbackIcon.Visibility = Visibility.Hidden;
+            feedbackOutput.Content = "";
         }
 
         private void detectCompression(float currentShoulderY)

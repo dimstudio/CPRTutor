@@ -15,7 +15,7 @@
         <Image Name="cprGauge" Margin="10,49,0,298.5" HorizontalAlignment="Left"/>
         <Label Name="compressionLabel" Content="" FontSize="24" HorizontalAlignment="Left" Margin="59,90,0,0" VerticalAlignment="Top"/>
         <Label Name="sharpflowOutput" Content="" FontSize="14" HorizontalAlignment="Center" Margin="278,90,0,0" VerticalAlignment="Top" />
-        <Label Name="feedback_Output" Content="" FontSize="14" HorizontalAlignment="Center" Margin="640,10,113,0" VerticalAlignment="Top" FontWeight="Bold" FontStyle="Italic"  />
+        <Label x:Name="feedbackOutput" Content="" FontSize="14" HorizontalAlignment="Center" Margin="564,10,0,0" VerticalAlignment="Top" FontWeight="Bold" FontStyle="Italic" Width="199"  />
 
         <Button x:Name="Start" Content="Start" HorizontalAlignment="Center" VerticalAlignment="Top" Click="Start_Recording" Width="86" Margin="278,26,399,0" Height="36"/>
         <Button x:Name="Stop" Content="Stop" HorizontalAlignment="Center" VerticalAlignment="Top" Click="Stop_Recording" Width="86" Margin="395,26,282,0" Height="36"/>
@@ -24,6 +24,7 @@
 
         </Grid>
         <CheckBox x:Name="feedback_activated" Content="Activate Feedback" HorizontalAlignment="Left" Margin="130,40,0,0" VerticalAlignment="Top" />
+        <Image x:Name="feedbackIcon" Height="37" Margin="30,25,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" Width="36" Source="megaphone.png" Visibility="Hidden"/>
 
     </Grid>
 </Window>
