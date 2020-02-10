@@ -225,6 +225,9 @@
   <ItemGroup>
     <Resource Include="megaphone.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Common\megaphone.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
