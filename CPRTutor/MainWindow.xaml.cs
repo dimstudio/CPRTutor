@@ -349,7 +349,16 @@ namespace CPRTutor
 
                     if (!sendingData && myoChunk!=null)
                     {
-                        myoChunk.Frames.Add(updateChunk);
+                        try
+                        {
+                            myoChunk.Frames.Add(updateChunk);
+                        }
+                        catch (System.IndexOutOfRangeException ex)
+                        {
+                            myoChunk = null;
+                            Console.WriteLine("System.IndexOutOfRangeException", updateChunk.ToString());
+                        }
+                       
                     }
 
 
@@ -599,10 +608,15 @@ namespace CPRTutor
         private void processFeedback(String feedbackString)
         {
 
-            int noLastCC = 10;
+            int noLastCC = 20; //20CCs = 10s 
             int feedbackFrequencyInSeconds = 10;
-            int feedbackErrorRateThreshold = 50;
-
+            //int feedbackErrorRateThreshold = 50;
+            var feedbackErrorRateThreshold = new Dictionary<string, int>();
+            feedbackErrorRateThreshold.Add("armsLocked", 5);
+            feedbackErrorRateThreshold.Add("bodyWeight", 20);
+            feedbackErrorRateThreshold.Add("classRate", 40);
+            feedbackErrorRateThreshold.Add("classRelease", 60);
+            feedbackErrorRateThreshold.Add("classDepth", 70);
 
             int correctCCs = 0;
             double ratio = 0;
@@ -614,9 +628,17 @@ namespace CPRTutor
             TimeSpan feedbackTimestamp;
             List<string> feedbackNames = new List<string>();
             List<string> feedbackValues = new List<string>();
-            String worstTargetName = "";
-            Double worstTargetValue = 0;
+
+            var currentScores = new Dictionary<string, double>();
+            currentScores.Add("armsLocked", 0);
+            currentScores.Add("bodyWeight", 0);
+            currentScores.Add("classRate", 0);
+            currentScores.Add("classRelease", 0);
+            currentScores.Add("classDepth", 0);
+
             bool emptyResults = false;
+
+            bool feedbackFired = false;
             int value;
 
             try
@@ -660,10 +682,9 @@ namespace CPRTutor
                         }
                         errorRate = 100 - Math.Round((ratio * 100), 1);
 
-                        if (errorRate > worstTargetValue)
+                        if (errorRate > currentScores[target.Key])
                         {
-                            worstTargetValue = errorRate;
-                            worstTargetName = target.Key;
+                            currentScores[target.Key] = errorRate;
                         }
 
                         sharpflowOutput.Content += target.Key + " (err. " + (errorRate.ToString()) + "%) ";// + String.Join(", ", target.Value) + "\n";
@@ -671,33 +692,41 @@ namespace CPRTutor
                     }
                     if (feedback_activated.IsChecked.HasValue)
                     {
-
                         if (feedback_activated.IsChecked.Value == true)
                         {
 
                             // check if feedbackFrequencyInSeconds are passed      
                             deltaFeedback = DateTime.Now.Subtract(lastFeedbackPrompted);
-                            if (deltaFeedback > TimeSpan.FromSeconds(feedbackFrequencyInSeconds)
-                                && worstTargetValue > feedbackErrorRateThreshold && compressionCounter > 5)
+                            if (deltaFeedback > TimeSpan.FromSeconds(feedbackFrequencyInSeconds) && compressionCounter > 5)
                             {
-                                Console.WriteLine(feedbackFrequencyInSeconds.ToString() + " seconds are passed: " + deltaFeedback.TotalSeconds.ToString()
-                                    + " worst target: " + worstTargetName + " target value: " + worstTargetValue.ToString());
-                                feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
-
-                                feedbackNames.Add("errorRate");
-                                feedbackValues.Add((worstTargetValue / 100).ToString());
-                                feedbackNames.Add("feedbackDevice");
-                                feedbackValues.Add("audio");
-                                feedbackNames.Add("targetClass");
-                                feedbackValues.Add(worstTargetName);
-                                feedbackNames.Add("feedbackMessage");
-                                feedbackValues.Add("feedback_" + worstTargetName + ".wav");
-
-                                var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
-                                feedbackObject.Frames.Add(update);
-                                lastFeedbackPrompted = DateTime.Now;
-                                promptFeedback(worstTargetName, "audio");
-
+                                feedbackIcon.Visibility = Visibility.Hidden;
+                                feedbackOutput.Content = "";
+                                foreach (KeyValuePair<string, double> entry in currentScores)
+                                {
+                                    if (feedbackFired == false)
+                                    {
+                                        if (entry.Value > feedbackErrorRateThreshold[entry.Key])
+                                        {
+                                            feedbackFired = true;
+                                            feedbackTimestamp = DateTime.Now.Subtract(startRecordingTime);
+                                            feedbackNames.Add("errorRate");
+                                            feedbackValues.Add((entry.Value / 100).ToString());
+                                            feedbackNames.Add("feedbackDevice");
+                                            feedbackValues.Add("audio");
+                                            feedbackNames.Add("targetClass");
+                                            feedbackValues.Add(entry.Key);
+                                            feedbackNames.Add("feedbackMessage");
+                                            feedbackValues.Add("feedback_" + entry.Key + ".wav");
+                                            var update = new FrameObject(startRecordingTime, feedbackNames, feedbackValues);
+                                            feedbackObject.Frames.Add(update);
+                                            lastFeedbackPrompted = DateTime.Now;
+                                            promptFeedback(entry.Key, "audio");
+                                        }
+                                    }
+                                }
+                                feedbackFired = false;
+                                //Console.WriteLine(feedbackFrequencyInSeconds.ToString() + " seconds are passed: " + deltaFeedback.TotalSeconds.ToString()
+                                //    + " worst target: " + worstTargetName + " target value: " + worstTargetValue.ToString());
                             }
                             else
                             {
@@ -716,7 +745,7 @@ namespace CPRTutor
 
         private void promptFeedback(String target, String channel)
         {
-            feedbackOutput.Content = channel + " feedback prompted: " + target;
+            feedbackOutput.Content = channel + " " + target;
             feedbackIcon.Visibility = Visibility.Visible;
             if (channel == "audio"){
 
@@ -733,8 +762,7 @@ namespace CPRTutor
                     audio = new SoundPlayer(Properties.Resources.feedback_armsLocked);
                 audio.Play();
             }
-            feedbackIcon.Visibility = Visibility.Hidden;
-            feedbackOutput.Content = "";
+
         }
 
         private void detectCompression(float currentShoulderY)

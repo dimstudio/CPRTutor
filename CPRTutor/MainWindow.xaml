@@ -24,7 +24,7 @@
 
         </Grid>
         <CheckBox x:Name="feedback_activated" Content="Activate Feedback" HorizontalAlignment="Left" Margin="130,40,0,0" VerticalAlignment="Top" />
-        <Image x:Name="feedbackIcon" Height="37" Margin="30,25,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" Width="36" Source="Common/megaphone.png" Visibility="Hidden"/>
+        <Image x:Name="feedbackIcon" Height="37" Margin="30,40,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" Width="36" Source="Common/megaphone.png" Visibility="Hidden"/>
 
     </Grid>
 </Window>
